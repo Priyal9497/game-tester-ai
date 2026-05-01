@@ -8,7 +8,7 @@ from groq import Groq
 
 logger = logging.getLogger(__name__)
 
-# ── Initialize Groq Client ────────────────────────────────────
+# Initialize Groq Client
 api_key = os.getenv("GROQ_API_KEY")
 model   = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
 client  = None
@@ -103,39 +103,64 @@ Do not use markdown or special formatting.
         return f"AI analysis failed: {str(e)[:80]}"
 
 
-# ── AI Chat Reply ─────────────────────────────────────────────
-def get_ai_chat_reply(message: str) -> str:
+# ── AI Game Conversation (NEW) ─────────────────────────────────
+def get_ai_game_conversation(user_message: str, conversation_history: list = None) -> str:
     """
-    Generate AI reply for general chat messages using Groq
+    Generate AI reply for game-related chat messages with conversation context
     """
     if client is None:
         return (
-            "I can test game URLs for you!\n"
-            "Just paste a URL starting with https://"
+            "I'm TestProbe AI, your game testing assistant! 🎮\n\n"
+            "I can help you with:\n"
+            "• Testing game URLs for fairness\n"
+            "• Answering questions about web games\n"
+            "• Explaining how game testing works\n\n"
+            "Just paste a game URL to test it, or ask me anything about games!"
         )
 
     try:
-        logger.info("Requesting Groq chat reply...")
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are TestProbe AI, a friendly and knowledgeable game testing assistant. "
+                    "You help users test web-based games using Selenium automation. "
+                    "You can answer questions about:\n"
+                    "  - What makes a game fair or unfair\n"
+                    "  - How to identify rigged games\n"
+                    "  - Web game technologies (HTML5, Canvas, WebGL)\n"
+                    "  - Game testing methodologies\n"
+                    "  - Popular game genres and platforms\n\n"
+                    "Keep your responses helpful, concise, and engaging. "
+                    "Always encourage users to share game URLs for testing. "
+                    "If asked about non-game topics, politely redirect to game-related discussions. "
+                    "Never use markdown formatting. Use plain text with emojis for friendliness."
+                )
+            }
+        ]
+        
+        # Add conversation history (last 10 messages for context)
+        if conversation_history and len(conversation_history) > 0:
+            recent = conversation_history[-10:]
+            for msg in recent:
+                role = "user" if msg["role"] == "user" else "assistant"
+                messages.append({
+                    "role": role,
+                    "content": msg["content"]
+                })
+        
+        # Add current message
+        messages.append({
+            "role": "user",
+            "content": user_message
+        })
+        
+        logger.info("Requesting Groq chat reply with context...")
         completion = client.chat.completions.create(
             model=model,
-            temperature=0.5,
-            max_tokens=200,
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are TestProbe AI, a browser game testing assistant. "
-                        "You help users test web-based games using Selenium automation. "
-                        "Keep replies short and friendly. "
-                        "Always encourage users to paste a game URL to test. "
-                        "Never use markdown formatting."
-                    )
-                },
-                {
-                    "role": "user",
-                    "content": message
-                }
-            ]
+            temperature=0.7,
+            max_tokens=300,
+            messages=messages
         )
         reply = completion.choices[0].message.content.strip()
         logger.info("Groq chat reply received")
@@ -144,6 +169,11 @@ def get_ai_chat_reply(message: str) -> str:
     except Exception as e:
         logger.error(f"Groq chat error: {str(e)[:100]}")
         return (
-            "I can help you test web games!\n"
-            "Just paste a game URL to get started."
+            "I'm here to help you test games! 🎮\n\n"
+            "You can:\n"
+            "• Send me a game URL (like https://chromedino.com) to test it\n"
+            "• Ask me about game fairness or testing methods\n"
+            "• Get tips on finding good web games\n\n"
+            "What would you like to know about games?"
         )
+    

@@ -13,6 +13,86 @@
 <body>
 
 <!-- ── Animated Background ── -->
+ <!-- Animated Background Particles -->
+<div class="grid-pattern"></div>
+<div class="particles" id="particles"></div>
+
+<script>
+    // Create floating particles
+    function createParticles() {
+        const particlesContainer = document.getElementById('particles');
+        if (!particlesContainer) return;
+        
+        for (let i = 0; i < 50; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            const size = Math.random() * 4 + 2;
+            particle.style.width = size + 'px';
+            particle.style.height = size + 'px';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDuration = Math.random() * 10 + 10 + 's';
+            particle.style.animationDelay = Math.random() * 5 + 's';
+            particle.style.background = `rgba(${Math.random() * 100 + 139}, ${Math.random() * 100 + 92}, ${Math.random() * 100 + 246}, ${Math.random() * 0.3 + 0.1})`;
+            particlesContainer.appendChild(particle);
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', createParticles);
+</script>
+
+<style>
+    .grid-pattern {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        background-size: 50px 50px;
+        pointer-events: none;
+        animation: gridFloat 20s linear infinite;
+        z-index: 0;
+    }
+    
+    @keyframes gridFloat {
+        0% { transform: translate(0, 0); }
+        100% { transform: translate(50px, 50px); }
+    }
+    
+    .particles {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+    }
+    
+    .particle {
+        position: absolute;
+        border-radius: 50%;
+        opacity: 0.6;
+        animation: floatParticle linear infinite;
+    }
+    
+    @keyframes floatParticle {
+        0% {
+            transform: translateY(100vh) rotate(0deg);
+            opacity: 0;
+        }
+        10% {
+            opacity: 0.6;
+        }
+        90% {
+            opacity: 0.6;
+        }
+        100% {
+            transform: translateY(-100vh) rotate(720deg);
+            opacity: 0;
+        }
+    }
+</style>
 <div class="bg-grid"></div>
 <div class="bg-orb orb-1"></div>
 <div class="bg-orb orb-2"></div>
@@ -223,6 +303,14 @@
                             <span class="info-label">Tested At</span>
                             <span class="info-value" id="tested-at-val">—</span>
                         </div>
+                        
+<div class="stat-card">
+    <div class="stat-icon game-type-icon">🎮</div>
+    <div class="stat-info">
+        <span class="stat-label">Game Type</span>
+        <span class="stat-value" id="quick-game-type">—</span>
+    </div>
+</div>
                     </div>
                 </div>
             </div>
@@ -334,6 +422,15 @@
                             <span class="pi-label">Tested At</span>
                             <span class="pi-value" id="d-tested-at">—</span>
                         </div>
+                        <!-- Add inside the pi-grid div, before or after existing items -->
+<div class="pi-item">
+    <span class="pi-label">🎮 Game Type</span>
+    <span class="pi-value" id="d-game-type">—</span>
+</div>
+<div class="pi-item">
+    <span class="pi-label">📊 Type Confidence</span>
+    <span class="pi-value" id="d-game-type-confidence">—</span>
+</div>
                     </div>
                 </div>
 

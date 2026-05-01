@@ -1,10 +1,8 @@
-/* ════════════════════════════════════════════════
-   TestProbe AI - Main Script v2.0
-   ════════════════════════════════════════════════ */
-
 document.addEventListener("DOMContentLoaded", () => {
 
-    // ── DOM Elements ─────────────────────────────
+    console.log("TestProbe AI - Script loaded");
+
+    // DOM Elements
     const chatMessages      = document.getElementById("chat-messages");
     const userInput         = document.getElementById("user-input");
     const sendBtn           = document.getElementById("send-btn");
@@ -41,29 +39,30 @@ document.addEventListener("DOMContentLoaded", () => {
     const dUrl       = document.getElementById("d-url");
     const dTestedAt  = document.getElementById("d-tested-at");
 
-    // ── State ────────────────────────────────────
+    // State
     let isTesting = false;
     let lastMetrics = null;
 
-    // ── Tab Navigation ───────────────────────────
+    // Check if elements exist
+    if (!sendBtn) console.error("Send button not found!");
+    if (!userInput) console.error("User input not found!");
+
+    // Tab Navigation
     const tabs = document.querySelectorAll(".nav-tab");
     const panels = document.querySelectorAll(".tab-panel");
 
     tabs.forEach(tab => {
         tab.addEventListener("click", () => {
             const target = tab.dataset.tab;
-
             tabs.forEach(t => t.classList.remove("active"));
             panels.forEach(p => p.classList.remove("active"));
-
             tab.classList.add("active");
             document.getElementById(`tab-${target}`).classList.add("active");
-
             if (target === "history") loadHistory();
         });
     });
 
-    // ── Chart.js Setup ───────────────────────────
+    // Chart.js Setup
     const chartDefaults = {
         responsive: true,
         maintainAspectRatio: false,
@@ -78,75 +77,82 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // Line Chart
-    const lineCtx = document.getElementById("performanceChart").getContext("2d");
-    const lineChart = new Chart(lineCtx, {
-        type: "line",
-        data: {
-            labels: [],
-            datasets: [{
-                label: "Score Over Time",
-                data: [],
-                borderColor: "#38bdf8",
-                backgroundColor: "rgba(56,189,248,0.08)",
-                borderWidth: 2.5,
-                tension: 0.4,
-                fill: true,
-                pointBackgroundColor: "#0ea5e9",
-                pointRadius: 4,
-                pointHoverRadius: 6
-            }]
-        },
-        options: {
-            ...chartDefaults,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: "rgba(255,255,255,0.04)" },
-                    ticks: { color: "#8899bb", font: { size: 11 } }
-                },
-                x: {
-                    grid: { color: "rgba(255,255,255,0.04)" },
-                    ticks: { color: "#8899bb", font: { size: 11 } }
-                }
-            }
-        }
-    });
+    let lineChart = null;
+    let radarChart = null;
 
-    // Radar Chart
-    const radarCtx = document.getElementById("radarChart").getContext("2d");
-    const radarChart = new Chart(radarCtx, {
-        type: "radar",
-        data: {
-            labels: ["Time", "Actions", "Speed", "Stability", "Score"],
-            datasets: [{
-                label: "Performance",
-                data: [0, 0, 0, 0, 0],
-                borderColor: "#38bdf8",
-                backgroundColor: "rgba(56,189,248,0.1)",
-                borderWidth: 2,
-                pointBackgroundColor: "#0ea5e9",
-                pointRadius: 4
-            }]
-        },
-        options: {
-            ...chartDefaults,
-            scales: {
-                r: {
-                    beginAtZero: true,
-                    max: 100,
-                    grid: { color: "rgba(255,255,255,0.06)" },
-                    angleLines: { color: "rgba(255,255,255,0.06)" },
-                    ticks: { display: false },
-                    pointLabels: {
-                        color: "#8899bb",
-                        font: { size: 11 }
+    try {
+        const lineCtx = document.getElementById("performanceChart").getContext("2d");
+        lineChart = new Chart(lineCtx, {
+            type: "line",
+            data: {
+                labels: [],
+                datasets: [{
+                    label: "Score Over Time",
+                    data: [],
+                    borderColor: "#38bdf8",
+                    backgroundColor: "rgba(56,189,248,0.08)",
+                    borderWidth: 2.5,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: "#0ea5e9",
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                ...chartDefaults,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: "rgba(255,255,255,0.04)" },
+                        ticks: { color: "#8899bb", font: { size: 11 } }
+                    },
+                    x: {
+                        grid: { color: "rgba(255,255,255,0.04)" },
+                        ticks: { color: "#8899bb", font: { size: 11 } }
                     }
                 }
             }
-        }
-    });
+        });
 
-    // ── Message Functions ────────────────────────
+        const radarCtx = document.getElementById("radarChart").getContext("2d");
+        radarChart = new Chart(radarCtx, {
+            type: "radar",
+            data: {
+                labels: ["Time", "Actions", "Speed", "Stability", "Score"],
+                datasets: [{
+                    label: "Performance",
+                    data: [0, 0, 0, 0, 0],
+                    borderColor: "#38bdf8",
+                    backgroundColor: "rgba(56,189,248,0.1)",
+                    borderWidth: 2,
+                    pointBackgroundColor: "#0ea5e9",
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                ...chartDefaults,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: "rgba(255,255,255,0.06)" },
+                        angleLines: { color: "rgba(255,255,255,0.06)" },
+                        ticks: { display: false },
+                        pointLabels: {
+                            color: "#8899bb",
+                            font: { size: 11 }
+                        }
+                    }
+                }
+            }
+        });
+        console.log("Charts initialized");
+    } catch(e) {
+        console.error("Chart error:", e);
+    }
+
+    // Message Functions
     function getTime() {
         return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     }
@@ -184,6 +190,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function appendLoadingMessage() {
         const wrapper = document.createElement("div");
         wrapper.className = "message bot-message loading-msg";
+        wrapper.id = "loading-msg";
 
         const icon = document.createElement("div");
         icon.className = "msg-icon";
@@ -208,23 +215,67 @@ document.addEventListener("DOMContentLoaded", () => {
         return wrapper;
     }
 
-    // ── Dashboard Update ─────────────────────────
+    function removeLoadingMessage(loadingMsg) {
+        if (loadingMsg && loadingMsg.parentNode) {
+            loadingMsg.remove();
+        }
+    }
+
+    // Dashboard Update
     function updateDashboard(metrics) {
         lastMetrics = metrics;
 
+        const perf = metrics.performance || "Low";
+        
+        // Handle NotGame case
+        if (perf === "NotGame") {
+            animateValue(timeVal, "❌ Invalid");
+            animateValue(actionsVal, "⚠️");
+            animateValue(apsVal, "—");
+            animateValue(errorsVal, "—");
+            
+            const perfConfig = getPerfConfig("NotGame");
+            perfVal.textContent = `${perfConfig.emoji} Not a Game`;
+            perfVal.style.color = perfConfig.color;
+            perfBarFill.style.width = perfConfig.barWidth;
+            perfBarFill.style.background = perfConfig.color;
+            
+            statusIndicator.className = "status-indicator";
+            statusIndicator.classList.add("status-low");
+            
+            canvasVal.textContent = "—";
+            gameElVal.textContent = "—";
+            testedAtVal.textContent = metrics.tested_at ? new Date(metrics.tested_at).toLocaleTimeString() : "—";
+            
+            animateValue(dTimeVal, "❌");
+            animateValue(dActionsVal, "⚠️");
+            animateValue(dApsVal, "—");
+            animateValue(dErrorsVal, "—");
+            animateValue(dPerfVal, `${perfConfig.emoji} Not a Game`);
+            dPerfVal.style.color = perfConfig.color;
+            
+            chartBadge.textContent = "Not Game";
+            chartBadge.className = "chart-badge not-game";
+            
+            dPageTitle.textContent = "Not a valid game";
+            dCanvas.textContent = "—";
+            dGameEl.textContent = "—";
+            dPageReady.textContent = "—";
+            return;
+        }
+        
+        // Normal game results
         const time_s  = metrics.time_survived || 0;
         const actions = metrics.actions || 0;
         const errors  = metrics.errors || 0;
-        const perf    = metrics.performance || "Low";
         const scores  = metrics.scores || [0];
         const pageInfo= metrics.page_info || {};
         const aps     = time_s > 0 ? (actions / time_s).toFixed(2) : "0";
 
-        // ── Chat Tab Stats ──
-        animateValue(timeVal,    `${time_s}s`);
+        animateValue(timeVal, `${time_s}s`);
         animateValue(actionsVal, actions);
-        animateValue(apsVal,     aps);
-        animateValue(errorsVal,  errors);
+        animateValue(apsVal, aps);
+        animateValue(errorsVal, errors);
 
         const perfConfig = getPerfConfig(perf);
         perfVal.textContent = `${perfConfig.emoji} ${perf}`;
@@ -235,65 +286,77 @@ document.addEventListener("DOMContentLoaded", () => {
         statusIndicator.className = "status-indicator";
         statusIndicator.classList.add(`status-${perf.toLowerCase()}`);
 
-        canvasVal.textContent  = pageInfo.has_canvas
-            ? `✅ Yes (${pageInfo.canvas_count || 0})`
-            : "❌ No";
-        gameElVal.textContent  = pageInfo.has_game_elements ? "✅ Detected" : "❌ None";
-        testedAtVal.textContent= metrics.tested_at
-            ? new Date(metrics.tested_at).toLocaleTimeString()
-            : "—";
+        canvasVal.textContent = pageInfo.has_canvas ? `✅ Yes (${pageInfo.canvas_count || 0})` : "❌ No";
+        gameElVal.textContent = pageInfo.has_game_elements ? "✅ Detected" : "❌ None";
+        testedAtVal.textContent = metrics.tested_at ? new Date(metrics.tested_at).toLocaleTimeString() : "—";
 
-        // ── Dashboard Tab Stats ──
-        animateValue(dTimeVal,    `${time_s}s`);
+        animateValue(dTimeVal, `${time_s}s`);
         animateValue(dActionsVal, actions);
-        animateValue(dApsVal,     aps);
-        animateValue(dErrorsVal,  errors);
-        animateValue(dPerfVal,    `${perfConfig.emoji} ${perf}`);
+        animateValue(dApsVal, aps);
+        animateValue(dErrorsVal, errors);
+        animateValue(dPerfVal, `${perfConfig.emoji} ${perf}`);
         dPerfVal.style.color = perfConfig.color;
 
         dPerfCard.className = "metric-big-card perf-metric";
         dPerfCard.classList.add(`${perf.toLowerCase()}-perf`);
 
         chartBadge.textContent = perf;
-        chartBadge.className   = `chart-badge ${perfConfig.badgeClass}`;
+        chartBadge.className = `chart-badge ${perfConfig.badgeClass}`;
 
         dPageTitle.textContent = pageInfo.title || "—";
-        dCanvas.textContent    = pageInfo.has_canvas
-            ? `✅ Yes (${pageInfo.canvas_count || 0})`
-            : "❌ No";
-        dGameEl.textContent    = pageInfo.has_game_elements ? "✅ Detected" : "❌ None";
+        dCanvas.textContent = pageInfo.has_canvas ? `✅ Yes (${pageInfo.canvas_count || 0})` : "❌ No";
+        dGameEl.textContent = pageInfo.has_game_elements ? "✅ Detected" : "❌ None";
         dPageReady.textContent = pageInfo.page_ready ? "✅ Yes" : "⚠️ No";
-        dUrl.textContent       = metrics.url || "—";
-        dTestedAt.textContent  = metrics.tested_at
-            ? new Date(metrics.tested_at).toLocaleString()
-            : "—";
+        dUrl.textContent = metrics.url || "—";
+        dTestedAt.textContent = metrics.tested_at ? new Date(metrics.tested_at).toLocaleString() : "—";
 
-        // ── Update Line Chart ──
-        const labels = scores.map((_, i) => `Step ${i}`);
-        lineChart.data.labels = labels;
-        lineChart.data.datasets[0].data = scores;
-        lineChart.update("active");
+        if (lineChart && scores.length > 0) {
+            const labels = scores.map((_, i) => `Step ${i}`);
+            lineChart.data.labels = labels;
+            lineChart.data.datasets[0].data = scores;
+            lineChart.update("active");
+        }
 
-        // ── Update Radar Chart ──
-        const timeScore    = Math.min((time_s / 30) * 100, 100);
-        const actionScore  = Math.min((actions / 25) * 100, 100);
-        const speedScore   = Math.min(parseFloat(aps) * 40, 100);
-        const stabilityScore = Math.max(100 - (errors * 20), 0);
-        const scoreVal     = scores.length > 1
-            ? Math.min((scores[scores.length - 1] / 200) * 100, 100)
-            : 0;
+        if (radarChart) {
+            const timeScore = Math.min((time_s / 30) * 100, 100);
+            const actionScore = Math.min((actions / 25) * 100, 100);
+            const speedScore = Math.min(parseFloat(aps) * 40, 100);
+            const stabilityScore = Math.max(100 - (errors * 20), 0);
+            const scoreVal = scores.length > 1 ? Math.min((scores[scores.length - 1] / 200) * 100, 100) : 0;
 
-        radarChart.data.datasets[0].data = [
-            timeScore, actionScore, speedScore, stabilityScore, scoreVal
-        ];
-        radarChart.update("active");
+            radarChart.data.datasets[0].data = [timeScore, actionScore, speedScore, stabilityScore, scoreVal];
+            radarChart.update("active");
+        }
+        
+const gameTypeEl = document.getElementById("d-game-type");
+const gameTypeConfidenceEl = document.getElementById("d-game-type-confidence");
+
+if (metrics.game_type) {
+    const gameType = metrics.game_type;
+    const confidence = gameType.confidence;
+    const confidenceEmoji = confidence === "High" ? "✅" : confidence === "Medium" ? "🟡" : "❓";
+    
+    if (gameTypeEl) {
+        gameTypeEl.textContent = `${gameType.primary_type} ${confidenceEmoji}`;
+    }
+    if (gameTypeConfidenceEl) {
+        gameTypeConfidenceEl.textContent = `${confidence} confidence`;
+    }
+    
+    // Also show in quick stats panel
+    const quickGameType = document.getElementById("quick-game-type");
+    if (quickGameType) {
+        quickGameType.textContent = gameType.primary_type;
+    }
+}
     }
 
     function getPerfConfig(perf) {
         const configs = {
             "High":   { emoji: "🟢", color: "#22c55e", barWidth: "90%", badgeClass: "good" },
             "Medium": { emoji: "🟡", color: "#eab308", barWidth: "55%", badgeClass: "warn" },
-            "Low":    { emoji: "🔴", color: "#ef4444", barWidth: "25%", badgeClass: "bad"  }
+            "Low":    { emoji: "🔴", color: "#ef4444", barWidth: "25%", badgeClass: "bad" },
+            "NotGame":{ emoji: "❌", color: "#a78bfa", barWidth: "0%", badgeClass: "not-game" }
         };
         return configs[perf] || configs["Low"];
     }
@@ -306,7 +369,6 @@ document.addEventListener("DOMContentLoaded", () => {
         el.classList.add("metric-updated");
     }
 
-    // ── Validate URL ─────────────────────────────
     function isValidUrl(str) {
         try {
             const url = new URL(str);
@@ -316,348 +378,258 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // ── Handle Send ──────────────────────────────
-//     async function handleSend() {
-//         if (isTesting) return;
-
-//         const text = userInput.value.trim();
-//         if (!text) {
-//             showToast("⚠️ Please enter a game URL", "error");
-//             userInput.focus();
-//             return;
-//         }
-
-//         if (!isValidUrl(text)) {
-//             showToast("⚠️ Please enter a valid URL (https://...)", "error");
-//             userInput.style.borderColor = "var(--red)";
-//             setTimeout(() => { userInput.style.borderColor = ""; }, 2000);
-//             return;
-//         }
-
-//         isTesting = true;
-//         userInput.value = "";
-//         userInput.disabled = true;
-//         sendBtn.disabled = true;
-
-//         appendMessage(text, "user");
-
-//         const loadingMsg = appendLoadingMessage();
-
-//         // Request timeout
-        
-// const controller = new AbortController();
-// // 120 second timeout
-// const timeoutId = setTimeout(
-//     () => controller.abort(), 120000
-// );
-
-// const response = await fetch("/test", {
-//     method: "POST",
-//     headers: {
-//         "Content-Type": "application/json",
-//         "Accept":        "application/json"
-//     },
-//     body:   JSON.stringify({ message: text }),
-//     signal: controller.signal
-// });
-
-// clearTimeout(timeoutId);
-
-//         try {
-//             const response = await fetch("/test", {
-//                 method: "POST",
-//                 headers: { "Content-Type": "application/json" },
-//                 body: JSON.stringify({ message: text }),
-//                 signal: controller.signal
-//             });
-
-//             clearTimeout(timeout);
-
-//             if (!response.ok) {
-//                 throw new Error(`Server error: ${response.status}`);
-//             }
-
-//             const data = await response.json();
-//             chatMessages.removeChild(loadingMsg);
-
-//             if (data.type === "error") {
-//                 appendMessage(data.reply, "bot", "error-msg");
-//                 showToast("❌ Test failed", "error");
-
-//             } else if (data.type === "test_result") {
-//                 appendMessage(data.reply, "bot", "result-msg");
-//                 updateDashboard(data.metrics);
-//                 showToast("✅ Test completed successfully!", "success");
-
-//                 // Auto switch to dashboard
-//                 setTimeout(() => {
-//                     tabs.forEach(t => t.classList.remove("active"));
-//                     panels.forEach(p => p.classList.remove("active"));
-//                     document.querySelector('[data-tab="dashboard"]').classList.add("active");
-//                     document.getElementById("tab-dashboard").classList.add("active");
-//                 }, 1500);
-//             }
-
-//         } catch (error) {
-//             clearTimeout(timeout);
-//             chatMessages.removeChild(loadingMsg);
-
-//             if (error.name === "AbortError") {
-//                 appendMessage("⏱️ Request timed out. The test took too long.", "bot", "error-msg");
-//                 showToast("⏱️ Request timed out", "error");
-//             } else {
-//                 appendMessage("❌ Could not reach the server. Please try again.", "bot", "error-msg");
-//                 showToast("❌ Connection error", "error");
-//             }
-//             console.error("Fetch error:", error);
-
-//         } finally {
-//             isTesting = false;
-//             userInput.disabled = false;
-//             sendBtn.disabled = false;
-//             userInput.focus();
-//         }
-//     }
-
-
-
-
-
-
-
-
-
-
-// ── Add this at very top of DOMContentLoaded ──
-  // make sure this exists only ONCE
-
-async function handleSend() {
-    // ✅ Hard guard - prevents double requests
-    if (isTesting) {
-        showToast("Test already running. Please wait...", "info");
-        return;
-    }
-
-    const text = userInput.value.trim();
-
-    if (!text) {
-        showToast("Please enter a game URL", "error");
-        userInput.focus();
-        return;
-    }
-
-    if (!isValidUrl(text)) {
-        showToast("Invalid URL. Must start with https://", "error");
-        return;
-    }
-
-    // ✅ Set flag immediately
-    isTesting          = true;
-    sendBtn.disabled   = true;
-    userInput.disabled = true;
-    userInput.value    = "";
-
-    appendMessage(text, "user");
-    const loadingMsg = appendLoadingMessage();
-
-    console.log("Sending request for:", text);
-
-    // ✅ 120 second timeout
-    const controller = new AbortController();
-    const timeoutId  = setTimeout(
-        () => controller.abort(), 120000
-    );
-
-    try {
-        const response = await fetch("/test", {
-            method:  "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept":       "application/json"
-            },
-            body:   JSON.stringify({ message: text }),
-            signal: controller.signal
-        });
-
-        clearTimeout(timeoutId);
-        console.log("Response status:", response.status);
-
-        const data = await response.json();
-        console.log("Data received:", data);
-
-        if (loadingMsg && loadingMsg.parentNode) {
-            chatMessages.removeChild(loadingMsg);
-        }
-
-        if (data.type === "error") {
-            appendMessage(data.reply, "bot", "error-msg");
-            showToast("Test failed", "error");
-
-        } else if (data.type === "test_result") {
-            appendMessage(data.reply, "bot", "result-msg");
-            updateDashboard(data.metrics);
-            showToast("Test completed successfully!", "success");
-
-            setTimeout(() => {
-                tabs.forEach(t => t.classList.remove("active"));
-                panels.forEach(p => p.classList.remove("active"));
-                document.querySelector(
-                    '[data-tab="dashboard"]'
-                ).classList.add("active");
-                document.getElementById(
-                    "tab-dashboard"
-                ).classList.add("active");
-            }, 1500);
-        }
-
-    } catch (error) {
-        clearTimeout(timeoutId);
-        console.error("Error:", error);
-
-        if (loadingMsg && loadingMsg.parentNode) {
-            chatMessages.removeChild(loadingMsg);
-        }
-
-        if (error.name === "AbortError") {
-            appendMessage(
-                "Request timed out after 2 minutes.",
-                "bot", "error-msg"
-            );
-            showToast("Request timed out", "error");
-        } else {
-            appendMessage(
-                `Connection error: ${error.message}`,
-                "bot", "error-msg"
-            );
-            showToast("Connection error", "error");
-        }
-
-    } finally {
-        // ✅ Always reset state
-        isTesting          = false;
-        sendBtn.disabled   = false;
-        userInput.disabled = false;
-        userInput.focus();
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // ── Event Listeners ──────────────────────────
-    sendBtn.addEventListener("click", handleSend);
-
-    userInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            handleSend();
-        }
-        if (e.key === "Escape") {
-            userInput.value = "";
-        }
-    });
-
-    clearChatBtn.addEventListener("click", () => {
-        const msgs = chatMessages.querySelectorAll(".message:not(.welcome-msg)");
-        msgs.forEach(m => m.remove());
-        showToast("🗑️ Chat cleared", "info");
-    });
-
-    // ── History ──────────────────────────────────
-    async function loadHistory() {
-        try {
-            const res = await fetch("/history");
-            if (!res.ok) return;
-            const data = await res.json();
-
-            totalTestsEl.textContent = `${data.total} tests run`;
-            historyList.innerHTML = "";
-
-            if (!data.history || data.history.length === 0) {
-                historyList.innerHTML = `
-                    <div class="history-empty">
-                        <div class="empty-icon">📋</div>
-                        <p>No tests run yet</p>
-                        <p class="empty-sub">Run your first test in the Chat tab</p>
-                    </div>
-                `;
-                return;
-            }
-
-            [...data.history].reverse().forEach(item => {
-                const el = document.createElement("div");
-                el.className = `history-item ${item.success ? "success" : "failed"}`;
-
-                const time = item.timestamp
-                    ? new Date(item.timestamp).toLocaleString()
-                    : "—";
-
-                const perf = item.metrics?.performance || null;
-                const perfBadge = perf
-                    ? `<span class="hi-badge badge-${perf.toLowerCase()}">${perf}</span>`
-                    : "";
-
-                el.innerHTML = `
-                    <div class="hi-left">
-                        <span class="hi-url">${item.url}</span>
-                        <span class="hi-meta">
-                            ${time}
-                            ${item.metrics ? ` • ⏱ ${item.metrics.time_survived}s • 🎮 ${item.metrics.actions} actions` : ""}
-                            ${item.error ? ` • ❌ ${item.error}` : ""}
-                        </span>
-                    </div>
-                    <div class="hi-right">
-                        ${perfBadge}
-                        <span class="hi-badge ${item.success ? "badge-success" : "badge-failed"}">
-                            ${item.success ? "✅ Passed" : "❌ Failed"}
-                        </span>
-                    </div>
-                `;
-                historyList.appendChild(el);
-            });
-
-        } catch (err) {
-            console.error("History load error:", err);
-        }
-    }
-
-    refreshHistoryBtn.addEventListener("click", () => {
-        loadHistory();
-        showToast("🔄 History refreshed", "info");
-    });
-
-    // ── Toast Notifications ──────────────────────
     function showToast(message, type = "info") {
+        if (!toastContainer) return;
         const toast = document.createElement("div");
         toast.className = `toast ${type}`;
-
         const icons = { success: "✅", error: "❌", info: "ℹ️" };
         toast.innerHTML = `<span>${icons[type] || "ℹ️"}</span><span>${message}</span>`;
-
         toastContainer.appendChild(toast);
-
         setTimeout(() => {
             toast.style.animation = "toastOut 0.3s ease forwards";
             setTimeout(() => toast.remove(), 300);
         }, 3000);
     }
 
-    // ── Init ─────────────────────────────────────
+    // Handle Send - MAIN FUNCTION
+    async function handleSend() {
+        console.log("handleSend called");
+        
+        if (isTesting) {
+            showToast("Test already running. Please wait...", "info");
+            return;
+        }
+
+        const text = userInput.value.trim();
+        console.log("URL entered:", text);
+
+        if (!text) {
+            showToast("Please enter a game URL", "error");
+            userInput.focus();
+            return;
+        }
+
+        if (!isValidUrl(text)) {
+            showToast("Invalid URL. Must start with https://", "error");
+            return;
+        }
+
+        // Set testing flag
+        isTesting = true;
+        sendBtn.disabled = true;
+        userInput.disabled = true;
+        
+        // Clear input and add user message
+        const urlToTest = text;
+        userInput.value = "";
+        appendMessage(urlToTest, "user");
+
+        // Add loading message
+        const loadingMsg = appendLoadingMessage();
+
+        console.log("Sending request to /test for:", urlToTest);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 120000);
+
+        try {
+            const response = await fetch("/test", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify({ message: urlToTest }),
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+            console.log("Response status:", response.status);
+
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log("Data received:", data);
+
+            // Remove loading message
+            if (loadingMsg && loadingMsg.parentNode) {
+                loadingMsg.remove();
+            }
+
+            if (data.type === "error") {
+                appendMessage(data.reply, "bot", "error-msg");
+                showToast("Test failed", "error");
+
+            } else if (data.type === "test_result") {
+                // Check if non-game
+                if (data.metrics && data.metrics.performance === "NotGame") {
+                    appendMessage(data.reply, "bot", "error-msg");
+                    showToast("This doesn't appear to be a game link", "error");
+                } else {
+                    appendMessage(data.reply, "bot", "result-msg");
+                    updateDashboard(data.metrics);
+                    showToast("Test completed successfully!", "success");
+
+                    // Auto switch to dashboard
+                    setTimeout(() => {
+                        const dashboardTab = document.querySelector('[data-tab="dashboard"]');
+                        if (dashboardTab) {
+                            tabs.forEach(t => t.classList.remove("active"));
+                            panels.forEach(p => p.classList.remove("active"));
+                            dashboardTab.classList.add("active");
+                            document.getElementById("tab-dashboard").classList.add("active");
+                        }
+                    }, 1500);
+                }
+            }
+
+        } catch (error) {
+            clearTimeout(timeoutId);
+            console.error("Fetch error:", error);
+
+            if (loadingMsg && loadingMsg.parentNode) {
+                loadingMsg.remove();
+            }
+
+            if (error.name === "AbortError") {
+                appendMessage("Request timed out after 2 minutes. Please try again.", "bot", "error-msg");
+                showToast("Request timed out", "error");
+            } else {
+                appendMessage(`Connection error: ${error.message}`, "bot", "error-msg");
+                showToast("Connection error. Make sure the server is running.", "error");
+            }
+
+        } finally {
+            isTesting = false;
+            sendBtn.disabled = false;
+            userInput.disabled = false;
+            userInput.focus();
+        }
+    }
+
+    // Load History
+    async function loadHistory() {
+        try {
+            const res = await fetch("/history");
+            if (!res.ok) return;
+            const data = await res.json();
+
+            if (totalTestsEl) totalTestsEl.textContent = `${data.total} tests run`;
+            
+            if (historyList) {
+                historyList.innerHTML = "";
+
+                if (!data.history || data.history.length === 0) {
+                    historyList.innerHTML = `
+                        <div class="history-empty">
+                            <div class="empty-icon">📋</div>
+                            <p>No tests run yet</p>
+                            <p class="empty-sub">Run your first test in the Chat tab</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                [...data.history].reverse().forEach(item => {
+                    const el = document.createElement("div");
+                    const isSuccess = item.success;
+                    el.className = `history-item ${isSuccess ? "success" : "failed"}`;
+
+                    const time = item.timestamp ? new Date(item.timestamp).toLocaleString() : "—";
+                    const perf = item.metrics?.performance || null;
+                    const perfBadge = perf ? `<span class="hi-badge badge-${perf.toLowerCase()}">${perf}</span>` : "";
+
+                    el.innerHTML = `
+                        <div class="hi-left">
+                            <span class="hi-url">${item.url}</span>
+                            <span class="hi-meta">
+                                ${time}
+                                ${item.metrics ? ` • ⏱ ${item.metrics.time_survived}s • 🎮 ${item.metrics.actions} actions` : ""}
+                                ${item.error ? ` • ❌ ${item.error}` : ""}
+                            </span>
+                        </div>
+                        <div class="hi-right">
+                            ${perfBadge}
+                            <span class="hi-badge ${isSuccess ? "badge-success" : "badge-failed"}">
+                                ${isSuccess ? "✅ Passed" : "❌ Failed"}
+                            </span>
+                        </div>
+                    `;
+                    historyList.appendChild(el);
+                });
+            }
+        } catch (err) {
+            console.error("History load error:", err);
+        }
+    }
+
+    // Event Listeners
+    if (sendBtn) {
+        sendBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            handleSend();
+        });
+        console.log("Send button listener attached");
+    }
+
+    if (userInput) {
+        userInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+            }
+            if (e.key === "Escape") {
+                userInput.value = "";
+            }
+        });
+    }
+
+    if (clearChatBtn) {
+        clearChatBtn.addEventListener("click", () => {
+            const msgs = chatMessages.querySelectorAll(".message:not(.welcome-msg)");
+            msgs.forEach(m => m.remove());
+            showToast("Chat cleared", "info");
+        });
+    }
+
+    if (refreshHistoryBtn) {
+        refreshHistoryBtn.addEventListener("click", () => {
+            loadHistory();
+            showToast("History refreshed", "info");
+        });
+    }
+
+    // Initial load
     userInput.focus();
-    showToast("🚀 TestProbe AI ready!", "success");
+    showToast("TestProbe AI ready! Enter a game URL to start.", "success");
+    console.log("TestProbe AI ready");
+});
+
+// Add interactive hover effects to metric cards
+function addInteractiveEffects() {
+    const metricCards = document.querySelectorAll('.metric-big-card, .stat-card, .pi-item, .history-item');
+    
+    metricCards.forEach(card => {
+        card.addEventListener('mouseenter', (e) => {
+            card.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        });
+    });
+}
+
+// Call this after DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    addInteractiveEffects();
+    
+    // Add typing animation to input focus
+    const userInput = document.getElementById('user-input');
+    if (userInput) {
+        userInput.addEventListener('focus', () => {
+            userInput.parentElement.style.transform = 'scale(1.02)';
+        });
+        userInput.addEventListener('blur', () => {
+            userInput.parentElement.style.transform = 'scale(1)';
+        });
+    }
 });
