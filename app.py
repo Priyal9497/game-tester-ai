@@ -156,14 +156,19 @@ def health_check():
 @app.route("/test", methods=["POST"])
 def test_game():
     data = request.get_json(silent=True)
-
+    
+    # Debug logging
+    logger.info(f"Received request data: {data}")
+    
     if not data or "message" not in data:
+        logger.error("No message in request")
         return jsonify({
             "type":  "error",
             "reply": "No message provided."
         }), 400
 
     user_message = str(data["message"]).strip()
+    logger.info(f"Extracted message: {user_message}")
 
     if not user_message:
         return jsonify({
@@ -171,10 +176,11 @@ def test_game():
             "reply": "Message cannot be empty."
         }), 400
 
+    # Check if it's a valid URL
     if not is_valid_url(user_message):
         return jsonify({
             "type":  "error",
-            "reply": "Invalid URL. Please enter a valid HTTP or HTTPS URL."
+            "reply": f"❌ Invalid URL: '{user_message}'\n\nPlease enter a valid URL starting with http:// or https://"
         }), 400
 
     try:
@@ -185,20 +191,18 @@ def test_game():
     except TimeoutError:
         return jsonify({
             "type":  "error",
-            "reply": "Test timed out. Please try again."
+            "reply": "⏱️ Test timed out after 120 seconds. Please try again."
         }), 504
-
     except ConnectionError:
         return jsonify({
             "type":  "error",
-            "reply": "Connection failed. Please check the URL."
+            "reply": "🔌 Connection failed. The website might be down or unreachable."
         }), 502
-
     except Exception as e:
-        logger.error(f"Error: {str(e)[:100]}")
+        logger.error(f"Error: {str(e)[:200]}")
         return jsonify({
             "type":  "error",
-            "reply": f"An error occurred: {str(e)[:100]}"
+            "reply": f"❌ An error occurred: {str(e)[:150]}"
         }), 500
 
 @app.route("/history", methods=["GET"])

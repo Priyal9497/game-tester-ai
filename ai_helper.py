@@ -103,7 +103,7 @@ Do not use markdown or special formatting.
         return f"AI analysis failed: {str(e)[:80]}"
 
 
-# ── AI Game Conversation (NEW) ─────────────────────────────────
+# ── AI Game Conversation ──────────────────────────────────────
 def get_ai_game_conversation(user_message: str, conversation_history: list = None) -> str:
     """
     Generate AI reply for game-related chat messages with conversation context
@@ -176,4 +176,3 @@ def get_ai_game_conversation(user_message: str, conversation_history: list = Non
             "• Get tips on finding good web games\n\n"
             "What would you like to know about games?"
         )
-    
