@@ -6,7 +6,6 @@ import os
 import sys
 import time
 import logging
-import psutil
 from datetime import datetime
 from urllib.parse import urlparse
 
@@ -34,52 +33,16 @@ except ImportError:
 from chatbot import process_message
 
 # ── Logging Setup ─────────────────────────────────────────────
-# ✅ Fix Unicode/Emoji encoding on Windows
 os.makedirs("logs", exist_ok=True)
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     handlers=[
-        logging.FileHandler(
-            "logs/testprobe.log",
-            encoding="utf-8"   # ✅ Fix emoji encoding
-        ),
-        logging.StreamHandler(
-            stream=open(
-                os.devnull, "w"
-            ) if sys.platform == "win32"
-            else sys.stdout
-        )
+        logging.FileHandler("logs/testprobe.log", encoding="utf-8"),
+        logging.StreamHandler(sys.stdout)
     ]
 )
-
-# ✅ Windows safe console logger (no emojis)
-console_handler = logging.StreamHandler(sys.stdout)
-console_handler.setLevel(logging.INFO)
-console_handler.setFormatter(
-    logging.Formatter("%(asctime)s [%(levelname)s]: %(message)s")
-)
-
-# Safe emit for Windows
-original_emit = console_handler.emit
-def safe_emit(record):
-    try:
-        record.msg = record.msg.encode(
-            "ascii", "replace"
-        ).decode("ascii")
-        original_emit(record)
-    except Exception:
-        pass
-
-console_handler.emit = safe_emit
-
-root_logger = logging.getLogger()
-root_logger.handlers = []
-root_logger.addHandler(
-    logging.FileHandler("logs/testprobe.log", encoding="utf-8")
-)
-root_logger.addHandler(console_handler)
 
 logger = logging.getLogger(__name__)
 
@@ -123,9 +86,7 @@ def before_request():
 
 @app.after_request
 def after_request(response):
-    duration = time.time() - getattr(
-        request, "start_time", time.time()
-    )
+    duration = time.time() - getattr(request, "start_time", time.time())
     logger.info(
         f"{response.status_code} | "
         f"{request.method} {request.path} | "
@@ -156,10 +117,9 @@ def health_check():
 @app.route("/test", methods=["POST"])
 def test_game():
     data = request.get_json(silent=True)
-    
-    # Debug logging
+
     logger.info(f"Received request data: {data}")
-    
+
     if not data or "message" not in data:
         logger.error("No message in request")
         return jsonify({
@@ -176,11 +136,13 @@ def test_game():
             "reply": "Message cannot be empty."
         }), 400
 
-    # Check if it's a valid URL
     if not is_valid_url(user_message):
         return jsonify({
             "type":  "error",
-            "reply": f"❌ Invalid URL: '{user_message}'\n\nPlease enter a valid URL starting with http:// or https://"
+            "reply": (
+                f"Invalid URL: '{user_message}'\n\n"
+                f"Please enter a valid URL starting with http:// or https://"
+            )
         }), 400
 
     try:
@@ -191,18 +153,18 @@ def test_game():
     except TimeoutError:
         return jsonify({
             "type":  "error",
-            "reply": "⏱️ Test timed out after 120 seconds. Please try again."
+            "reply": "Test timed out after 120 seconds. Please try again."
         }), 504
     except ConnectionError:
         return jsonify({
             "type":  "error",
-            "reply": "🔌 Connection failed. The website might be down or unreachable."
+            "reply": "Connection failed. The website might be down or unreachable."
         }), 502
     except Exception as e:
         logger.error(f"Error: {str(e)[:200]}")
         return jsonify({
             "type":  "error",
-            "reply": f"❌ An error occurred: {str(e)[:150]}"
+            "reply": f"An error occurred: {str(e)[:150]}"
         }), 500
 
 @app.route("/history", methods=["GET"])
@@ -241,11 +203,11 @@ def internal_error(e):
 # ── Entry Point ───────────────────────────────────────────────
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
-    print(f"Starting TestProbe AI on port {port}")
-    print(f"Open: http://localhost:{port}")
+    debug = os.getenv("FLASK_DEBUG", "false").lower() == "true"
+    logger.info(f"Starting TestProbe AI on port {port}")
     app.run(
-        debug=True,
+        debug=debug,
         port=port,
         host="0.0.0.0",
-        threaded=True    # ✅ Handle requests in threads
+        threaded=True
     )

@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════
-   TestProbe AI - Main Script v2.0
+   TestProbe AI - Main Script v3.0
    ════════════════════════════════════════════════ */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -15,50 +15,52 @@ document.addEventListener("DOMContentLoaded", () => {
     const refreshHistoryBtn = document.getElementById("refresh-history-btn");
 
     // Quick stat elements (Chat tab)
-    const timeVal    = document.getElementById("time-val");
-    const actionsVal = document.getElementById("actions-val");
-    const apsVal     = document.getElementById("aps-val");
-    const errorsVal  = document.getElementById("errors-val");
-    const perfVal    = document.getElementById("perf-val");
-    const perfBarFill= document.getElementById("perf-bar-fill");
+    const timeVal         = document.getElementById("time-val");
+    const actionsVal      = document.getElementById("actions-val");
+    const apsVal          = document.getElementById("aps-val");
+    const errorsVal       = document.getElementById("errors-val");
+    const perfVal         = document.getElementById("perf-val");
+    const perfBarFill     = document.getElementById("perf-bar-fill");
     const statusIndicator = document.getElementById("status-indicator");
-    const canvasVal  = document.getElementById("canvas-val");
-    const gameElVal  = document.getElementById("game-el-val");
-    const testedAtVal= document.getElementById("tested-at-val");
+    const canvasVal       = document.getElementById("canvas-val");
+    const gameElVal       = document.getElementById("game-el-val");
+    const testedAtVal     = document.getElementById("tested-at-val");
 
     // Dashboard elements
-    const dTimeVal   = document.getElementById("d-time-val");
-    const dActionsVal= document.getElementById("d-actions-val");
-    const dApsVal    = document.getElementById("d-aps-val");
-    const dErrorsVal = document.getElementById("d-errors-val");
-    const dPerfVal   = document.getElementById("d-perf-val");
-    const dPerfCard  = document.getElementById("d-perf-card");
-    const chartBadge = document.getElementById("chart-badge");
-    const dPageTitle = document.getElementById("d-page-title");
-    const dCanvas    = document.getElementById("d-canvas");
-    const dGameEl    = document.getElementById("d-game-el");
-    const dPageReady = document.getElementById("d-page-ready");
-    const dUrl       = document.getElementById("d-url");
-    const dTestedAt  = document.getElementById("d-tested-at");
+    const dTimeVal    = document.getElementById("d-time-val");
+    const dActionsVal = document.getElementById("d-actions-val");
+    const dApsVal     = document.getElementById("d-aps-val");
+    const dErrorsVal  = document.getElementById("d-errors-val");
+    const dPerfVal    = document.getElementById("d-perf-val");
+    const dPerfCard   = document.getElementById("d-perf-card");
+    const chartBadge  = document.getElementById("chart-badge");
+    const dPageTitle  = document.getElementById("d-page-title");
+    const dCanvas     = document.getElementById("d-canvas");
+    const dGameEl     = document.getElementById("d-game-el");
+    const dPageReady  = document.getElementById("d-page-ready");
+    const dUrl        = document.getElementById("d-url");
+    const dTestedAt   = document.getElementById("d-tested-at");
 
     // ── State ────────────────────────────────────
-    let isTesting = false;
+    let isTesting  = false;
     let lastMetrics = null;
 
-    // ── Helper Functions ─────────────────────────
+    // ── Helper ───────────────────────────────────
     function getTime() {
-        return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        return new Date().toLocaleTimeString([], {
+            hour: "2-digit", minute: "2-digit"
+        });
     }
 
     // ── Tab Navigation ───────────────────────────
-    const tabs = document.querySelectorAll(".nav-tab");
+    const tabs   = document.querySelectorAll(".nav-tab");
     const panels = document.querySelectorAll(".tab-panel");
 
     tabs.forEach(tab => {
         tab.addEventListener("click", () => {
             const target = tab.dataset.tab;
 
-            tabs.forEach(t => t.classList.remove("active"));
+            tabs.forEach(t   => t.classList.remove("active"));
             panels.forEach(p => p.classList.remove("active"));
 
             tab.classList.add("active");
@@ -83,8 +85,8 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // Line Chart
-    const lineCtx = document.getElementById("performanceChart").getContext("2d");
-    const lineChart = new Chart(lineCtx, {
+    const lineCtx   = document.getElementById("performanceChart").getContext("2d");
+    const lineChart  = new Chart(lineCtx, {
         type: "line",
         data: {
             labels: [],
@@ -106,11 +108,11 @@ document.addEventListener("DOMContentLoaded", () => {
             scales: {
                 y: {
                     beginAtZero: true,
-                    grid: { color: "rgba(255,255,255,0.04)" },
+                    grid:  { color: "rgba(255,255,255,0.04)" },
                     ticks: { color: "#8899bb", font: { size: 11 } }
                 },
                 x: {
-                    grid: { color: "rgba(255,255,255,0.04)" },
+                    grid:  { color: "rgba(255,255,255,0.04)" },
                     ticks: { color: "#8899bb", font: { size: 11 } }
                 }
             }
@@ -118,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Radar Chart
-    const radarCtx = document.getElementById("radarChart").getContext("2d");
+    const radarCtx  = document.getElementById("radarChart").getContext("2d");
     const radarChart = new Chart(radarCtx, {
         type: "radar",
         data: {
@@ -139,12 +141,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 r: {
                     beginAtZero: true,
                     max: 100,
-                    grid: { color: "rgba(255,255,255,0.06)" },
-                    angleLines: { color: "rgba(255,255,255,0.06)" },
-                    ticks: { display: false },
+                    grid:        { color: "rgba(255,255,255,0.06)" },
+                    angleLines:  { color: "rgba(255,255,255,0.06)" },
+                    ticks:       { display: false },
                     pointLabels: {
                         color: "#8899bb",
-                        font: { size: 11 }
+                        font:  { size: 11 }
                     }
                 }
             }
@@ -153,12 +155,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ── Message Functions ────────────────────────
     function appendMessage(text, type = "bot", extraClass = "") {
-        const isUser = type === "user";
+        const isUser  = type === "user";
         const wrapper = document.createElement("div");
         wrapper.className = `message ${isUser ? "user-message" : "bot-message"} ${extraClass}`;
 
         const icon = document.createElement("div");
-        icon.className = "msg-icon";
+        icon.className   = "msg-icon";
         icon.textContent = isUser ? "👤" : "🤖";
 
         const content = document.createElement("div");
@@ -166,10 +168,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const textEl = document.createElement("p");
         textEl.style.whiteSpace = "pre-wrap";
-        textEl.textContent = text;
+        textEl.textContent      = text;
 
         const timeEl = document.createElement("span");
-        timeEl.className = "msg-time";
+        timeEl.className   = "msg-time";
         timeEl.textContent = getTime();
 
         content.appendChild(textEl);
@@ -185,27 +187,27 @@ document.addEventListener("DOMContentLoaded", () => {
     function appendChatMessage(text) {
         const wrapper = document.createElement("div");
         wrapper.className = "message bot-message chat-msg";
-        
+
         const icon = document.createElement("div");
-        icon.className = "msg-icon";
+        icon.className   = "msg-icon";
         icon.textContent = "💬";
-        
+
         const content = document.createElement("div");
         content.className = "msg-content";
-        
+
         const textEl = document.createElement("p");
         textEl.style.whiteSpace = "pre-wrap";
-        textEl.textContent = text;
-        
+        textEl.textContent      = text;
+
         const timeEl = document.createElement("span");
-        timeEl.className = "msg-time";
+        timeEl.className   = "msg-time";
         timeEl.textContent = getTime();
-        
+
         content.appendChild(textEl);
         content.appendChild(timeEl);
         wrapper.appendChild(icon);
         wrapper.appendChild(content);
-        
+
         chatMessages.appendChild(wrapper);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
@@ -213,10 +215,10 @@ document.addEventListener("DOMContentLoaded", () => {
     function appendLoadingMessage() {
         const wrapper = document.createElement("div");
         wrapper.className = "message bot-message loading-msg";
-        wrapper.id = "loading-msg";
+        wrapper.id        = "loading-msg";
 
         const icon = document.createElement("div");
-        icon.className = "msg-icon";
+        icon.className   = "msg-icon";
         icon.textContent = "🤖";
 
         const content = document.createElement("div");
@@ -242,38 +244,42 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateDashboard(metrics) {
         lastMetrics = metrics;
 
-        const time_s  = metrics.time_survived || 0;
-        const actions = metrics.actions || 0;
-        const errors  = metrics.errors || 0;
-        const perf    = metrics.performance || "Low";
-        const scores  = metrics.scores || [0];
-        const pageInfo= metrics.page_info || {};
-        const aps     = time_s > 0 ? (actions / time_s).toFixed(2) : "0";
+        const time_s   = metrics.time_survived || 0;
+        const actions  = metrics.actions        || 0;
+        const errors   = metrics.errors         || 0;
+        const perf     = metrics.performance    || "Low";
+        const scores   = metrics.scores         || [0];
+        const pageInfo = metrics.page_info      || {};
+        const aps      = time_s > 0
+            ? (actions / time_s).toFixed(2)
+            : "0";
 
-        // ── Chat Tab Stats ──
+        // Chat tab stats
         animateValue(timeVal,    `${time_s}s`);
         animateValue(actionsVal, actions);
         animateValue(apsVal,     aps);
         animateValue(errorsVal,  errors);
 
         const perfConfig = getPerfConfig(perf);
-        perfVal.textContent = `${perfConfig.emoji} ${perf}`;
-        perfVal.style.color = perfConfig.color;
-        perfBarFill.style.width = perfConfig.barWidth;
+        perfVal.textContent       = `${perfConfig.emoji} ${perf}`;
+        perfVal.style.color       = perfConfig.color;
+        perfBarFill.style.width   = perfConfig.barWidth;
         perfBarFill.style.background = perfConfig.color;
 
         statusIndicator.className = "status-indicator";
         statusIndicator.classList.add(`status-${perf.toLowerCase()}`);
 
-        canvasVal.textContent  = pageInfo.has_canvas
+        canvasVal.textContent   = pageInfo.has_canvas
             ? `✅ Yes (${pageInfo.canvas_count || 0})`
             : "❌ No";
-        gameElVal.textContent  = pageInfo.has_game_elements ? "✅ Detected" : "❌ None";
-        testedAtVal.textContent= metrics.tested_at
+        gameElVal.textContent   = pageInfo.has_game_elements
+            ? "✅ Detected"
+            : "❌ None";
+        testedAtVal.textContent = metrics.tested_at
             ? new Date(metrics.tested_at).toLocaleTimeString()
             : "—";
 
-        // ── Dashboard Tab Stats ──
+        // Dashboard tab stats
         animateValue(dTimeVal,    `${time_s}s`);
         animateValue(dActionsVal, actions);
         animateValue(dApsVal,     aps);
@@ -287,29 +293,31 @@ document.addEventListener("DOMContentLoaded", () => {
         chartBadge.textContent = perf;
         chartBadge.className   = `chart-badge ${perfConfig.badgeClass}`;
 
-        dPageTitle.textContent = pageInfo.title || "—";
+        dPageTitle.textContent = pageInfo.title       || "—";
         dCanvas.textContent    = pageInfo.has_canvas
             ? `✅ Yes (${pageInfo.canvas_count || 0})`
             : "❌ No";
-        dGameEl.textContent    = pageInfo.has_game_elements ? "✅ Detected" : "❌ None";
-        dPageReady.textContent = pageInfo.page_ready ? "✅ Yes" : "⚠️ No";
-        dUrl.textContent       = metrics.url || "—";
+        dGameEl.textContent    = pageInfo.has_game_elements
+            ? "✅ Detected"
+            : "❌ None";
+        dPageReady.textContent = pageInfo.page_ready  ? "✅ Yes" : "⚠️ No";
+        dUrl.textContent       = metrics.url          || "—";
         dTestedAt.textContent  = metrics.tested_at
             ? new Date(metrics.tested_at).toLocaleString()
             : "—";
 
-        // ── Update Line Chart ──
+        // Line Chart
         const labels = scores.map((_, i) => `Step ${i}`);
-        lineChart.data.labels = labels;
-        lineChart.data.datasets[0].data = scores;
+        lineChart.data.labels              = labels;
+        lineChart.data.datasets[0].data    = scores;
         lineChart.update("active");
 
-        // ── Update Radar Chart ──
-        const timeScore    = Math.min((time_s / 30) * 100, 100);
-        const actionScore  = Math.min((actions / 25) * 100, 100);
-        const speedScore   = Math.min(parseFloat(aps) * 40, 100);
+        // Radar Chart
+        const timeScore     = Math.min((time_s / 30) * 100, 100);
+        const actionScore   = Math.min((actions / 25) * 100, 100);
+        const speedScore    = Math.min(parseFloat(aps) * 40, 100);
         const stabilityScore = Math.max(100 - (errors * 20), 0);
-        const scoreVal     = scores.length > 1
+        const scoreVal      = scores.length > 1
             ? Math.min((scores[scores.length - 1] / 200) * 100, 100)
             : 0;
 
@@ -321,10 +329,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function getPerfConfig(perf) {
         const configs = {
-            "High":   { emoji: "🟢", color: "#22c55e", barWidth: "90%", badgeClass: "good" },
-            "Medium": { emoji: "🟡", color: "#eab308", barWidth: "55%", badgeClass: "warn" },
-            "Low":    { emoji: "🔴", color: "#ef4444", barWidth: "25%", badgeClass: "bad" },
-            "NotGame":{ emoji: "❌", color: "#a78bfa", barWidth: "0%", badgeClass: "not-game" }
+            "High":    { emoji: "🟢", color: "#22c55e", barWidth: "90%", badgeClass: "good" },
+            "Medium":  { emoji: "🟡", color: "#eab308", barWidth: "55%", badgeClass: "warn" },
+            "Low":     { emoji: "🔴", color: "#ef4444", barWidth: "25%", badgeClass: "bad" },
+            "NotGame": { emoji: "❌", color: "#a78bfa", barWidth: "0%",  badgeClass: "not-game" }
         };
         return configs[perf] || configs["Low"];
     }
@@ -337,7 +345,7 @@ document.addEventListener("DOMContentLoaded", () => {
         el.classList.add("metric-updated");
     }
 
-    // ── Validate URL ─────────────────────────────
+    // ── URL Validation ───────────────────────────
     function isValidUrl(str) {
         try {
             const url = new URL(str);
@@ -364,24 +372,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!text.startsWith("http://") && !text.startsWith("https://")) {
             showToast("Please enter a valid URL starting with https://", "error");
-            userInput.style.borderColor = "var(--red)";
+            userInput.style.borderColor = "#ef4444";
             setTimeout(() => { userInput.style.borderColor = ""; }, 2000);
             return;
         }
 
         if (!isValidUrl(text)) {
             showToast("Please enter a valid URL (https://...)", "error");
-            userInput.style.borderColor = "var(--red)";
+            userInput.style.borderColor = "#ef4444";
             setTimeout(() => { userInput.style.borderColor = ""; }, 2000);
             return;
         }
 
-        isTesting = true;
-        sendBtn.disabled = true;
+        isTesting          = true;
+        sendBtn.disabled   = true;
         userInput.disabled = true;
-        
-        const urlToTest = text;
-        userInput.value = "";
+
+        const urlToTest  = text;
+        userInput.value  = "";
 
         appendMessage(urlToTest, "user");
         const loadingMsg = appendLoadingMessage();
@@ -389,16 +397,16 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("Sending request for:", urlToTest);
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 120000);
+        const timeoutId  = setTimeout(() => controller.abort(), 120000);
 
         try {
             const response = await fetch("/test", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Accept": "application/json"
+                    "Accept":       "application/json"
                 },
-                body: JSON.stringify({ message: urlToTest }),
+                body:   JSON.stringify({ message: urlToTest }),
                 signal: controller.signal
             });
 
@@ -418,7 +426,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (data.type === "error") {
                 appendMessage(data.reply, "bot", "error-msg");
-                showToast("Error", "error");
+                showToast("Error occurred", "error");
 
             } else if (data.type === "chat") {
                 appendChatMessage(data.reply);
@@ -432,11 +440,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     appendMessage(data.reply, "bot", "result-msg");
                     updateDashboard(data.metrics);
                     showToast("Test completed successfully!", "success");
-                    
+
                     setTimeout(() => {
                         const dashboardTab = document.querySelector('[data-tab="dashboard"]');
                         if (dashboardTab) {
-                            tabs.forEach(t => t.classList.remove("active"));
+                            tabs.forEach(t   => t.classList.remove("active"));
                             panels.forEach(p => p.classList.remove("active"));
                             dashboardTab.classList.add("active");
                             document.getElementById("tab-dashboard").classList.add("active");
@@ -444,7 +452,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     }, 1500);
                 }
             } else {
-                appendMessage(data.reply || "Test completed. Check dashboard for results.", "bot", "result-msg");
+                appendMessage(
+                    data.reply || "Test completed. Check dashboard for results.",
+                    "bot",
+                    "result-msg"
+                );
                 if (data.metrics) {
                     updateDashboard(data.metrics);
                 }
@@ -460,19 +472,30 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (error.name === "AbortError") {
-                appendMessage("Request timed out after 2 minutes. The test took too long to complete.", "bot", "error-msg");
+                appendMessage(
+                    "Request timed out after 2 minutes. The test took too long.",
+                    "bot", "error-msg"
+                );
                 showToast("Request timed out", "error");
-            } else if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
-                appendMessage("Cannot connect to the server. Make sure the backend is running on port 5000.", "bot", "error-msg");
-                showToast("Connection error - is the server running?", "error");
+
+            } else if (
+                error.message.includes("Failed to fetch") ||
+                error.message.includes("NetworkError")
+            ) {
+                appendMessage(
+                    "Cannot connect to the server. Make sure the backend is running.",
+                    "bot", "error-msg"
+                );
+                showToast("Connection error", "error");
+
             } else {
                 appendMessage(`Error: ${error.message}`, "bot", "error-msg");
                 showToast("Error occurred", "error");
             }
 
         } finally {
-            isTesting = false;
-            sendBtn.disabled = false;
+            isTesting          = false;
+            sendBtn.disabled   = false;
             userInput.disabled = false;
             userInput.focus();
         }
@@ -497,6 +520,14 @@ document.addEventListener("DOMContentLoaded", () => {
         showToast("Chat cleared", "info");
     });
 
+    // Input focus scale effect
+    userInput.addEventListener("focus", () => {
+        userInput.parentElement.style.transform = "scale(1.02)";
+    });
+    userInput.addEventListener("blur", () => {
+        userInput.parentElement.style.transform = "scale(1)";
+    });
+
     // ── History ──────────────────────────────────
     async function loadHistory() {
         try {
@@ -505,7 +536,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await res.json();
 
             totalTestsEl.textContent = `${data.total} tests run`;
-            historyList.innerHTML = "";
+            historyList.innerHTML    = "";
 
             if (!data.history || data.history.length === 0) {
                 historyList.innerHTML = `
@@ -519,14 +550,14 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             [...data.history].reverse().forEach(item => {
-                const el = document.createElement("div");
+                const el   = document.createElement("div");
                 el.className = `history-item ${item.success ? "success" : "failed"}`;
 
                 const time = item.timestamp
                     ? new Date(item.timestamp).toLocaleString()
                     : "—";
 
-                const perf = item.metrics?.performance || null;
+                const perf      = item.metrics?.performance || null;
                 const perfBadge = perf
                     ? `<span class="hi-badge badge-${perf.toLowerCase()}">${perf}</span>`
                     : "";
@@ -536,7 +567,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         <span class="hi-url">${escapeHtml(item.url)}</span>
                         <span class="hi-meta">
                             ${time}
-                            ${item.metrics ? ` • Time: ${item.metrics.time_survived}s • Actions: ${item.metrics.actions}` : ""}
+                            ${item.metrics
+                                ? ` • Time: ${item.metrics.time_survived}s • Actions: ${item.metrics.actions}`
+                                : ""}
                             ${item.error ? ` • Error: ${item.error}` : ""}
                         </span>
                     </div>
@@ -556,7 +589,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function escapeHtml(text) {
-        const div = document.createElement("div");
+        const div      = document.createElement("div");
         div.textContent = text;
         return div.innerHTML;
     }
@@ -569,11 +602,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // ── Toast Notifications ──────────────────────
     function showToast(message, type = "info") {
         if (!toastContainer) return;
-        const toast = document.createElement("div");
+
+        const toast  = document.createElement("div");
         toast.className = `toast ${type}`;
 
-        const icons = { success: "✅", error: "❌", info: "ℹ️" };
-        toast.innerHTML = `<span>${icons[type] || "ℹ️"}</span><span>${message}</span>`;
+        const icons  = { success: "✅", error: "❌", info: "ℹ️" };
+        toast.innerHTML = `
+            <span>${icons[type] || "ℹ️"}</span>
+            <span>${message}</span>
+        `;
 
         toastContainer.appendChild(toast);
 
@@ -583,34 +620,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 3000);
     }
 
+    // ── Interactive Effects ──────────────────────
+    function addInteractiveEffects() {
+        const cards = document.querySelectorAll(
+            ".metric-big-card, .stat-card, .pi-item, .history-item"
+        );
+        cards.forEach(card => {
+            card.addEventListener("mouseenter", () => {
+                card.style.transition = "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
+            });
+        });
+    }
+
     // ── Init ─────────────────────────────────────
     userInput.focus();
     showToast("TestProbe AI ready!", "success");
-});
-
-// Add interactive hover effects to metric cards
-function addInteractiveEffects() {
-    const metricCards = document.querySelectorAll('.metric-big-card, .stat-card, .pi-item, .history-item');
-    
-    metricCards.forEach(card => {
-        card.addEventListener('mouseenter', (e) => {
-            card.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-        });
-    });
-}
-
-// Call this after DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
     addInteractiveEffects();
-    
-    // Add typing animation to input focus
-    const userInput = document.getElementById('user-input');
-    if (userInput) {
-        userInput.addEventListener('focus', () => {
-            userInput.parentElement.style.transform = 'scale(1.02)';
-        });
-        userInput.addEventListener('blur', () => {
-            userInput.parentElement.style.transform = 'scale(1)';
-        });
-    }
-});
+
+}); // ← Single DOMContentLoaded - no duplicates

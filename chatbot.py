@@ -71,8 +71,7 @@ def extract_url(text: str) -> Optional[str]:
             if all([
                 parsed.scheme in ("http", "https"),
                 parsed.netloc,
-                "." in parsed.netloc or
-                parsed.netloc == "localhost"
+                "." in parsed.netloc or parsed.netloc == "localhost"
             ]):
                 return url
         except Exception:
@@ -87,10 +86,9 @@ def is_likely_game_url(url: str) -> tuple:
     Returns: (is_game, reason)
     """
     url_lower = url.lower()
-    
-    # Known game domains
+
     game_domains = [
-        "chromedino.com", "chrome.com/dino", "pokemon", 
+        "chromedino.com", "chrome.com/dino", "pokemon",
         "miniclip", "kongregate", "newgrounds", "armorgames",
         "crazygames", "poki", "coolmathgames", "addictinggames",
         "nitrome", "agame", "friv", "y8.com", "gamepix",
@@ -98,14 +96,12 @@ def is_likely_game_url(url: str) -> tuple:
         "steampowered", "epicgames", "roblox", "minecraft",
         "chess.com", "lichess.org", "tetris.com", "slither.io"
     ]
-    
-    # Game indicators in URL path
+
     game_indicators = [
-        "/game/", "/play/", "/games/", "/arcade/", 
+        "/game/", "/play/", "/games/", "/arcade/",
         "game.html", "play.html", "index.html", "/gameplay"
     ]
-    
-    # Non-game domains
+
     non_game_domains = [
         "google", "facebook", "twitter", "instagram", "youtube",
         "linkedin", "github", "stackoverflow", "reddit", "amazon",
@@ -113,33 +109,29 @@ def is_likely_game_url(url: str) -> tuple:
         "netflix", "spotify", "gmail", "outlook", "yahoo",
         "whatsapp", "telegram", "discord", "tiktok", "snapchat"
     ]
-    
-    # Non-game indicators
+
     non_game_indicators = [
         "/watch?v=", "/shorts/", "/feed/", "/post/",
         "/article/", "/blog/", "/news/", "search?",
         "login", "signup", "register", "mail."
     ]
-    
-    # Check for obvious non-games
+
     for bad in non_game_domains:
         if bad in url_lower:
             return False, f"'{bad}' is not a gaming website"
-    
+
     for bad in non_game_indicators:
         if bad in url_lower:
             return False, f"URL contains '{bad}' - not a game link"
-    
-    # Check for game domains
+
     for good in game_domains:
         if good in url_lower:
             return True, "Game domain detected"
-    
-    # Check for game indicators
+
     for indicator in game_indicators:
         if indicator in url_lower:
             return True, "Game path detected"
-    
+
     return None, "Requires page inspection"
 
 
@@ -171,25 +163,23 @@ def validate_metrics(metrics: dict) -> tuple:
 # ── Reply Builder ─────────────────────────────────────────────
 def build_reply(url: str, metrics: dict, ai_analysis: str) -> str:
     perf = metrics["performance"]
-    
-    # Special handling for non-game links
+
     if perf == "NotGame":
         reason = metrics.get("game_check_reason", "No game detected")
         return (
-            f"❌ WRONG LINK - CAN'T TEST THIS LINK\n\n"
+            f"❌ WRONG LINK - CANNOT TEST THIS\n\n"
             f"URL: {url}\n"
             f"{'─' * 40}\n"
             f"Reason: {reason}\n\n"
             f"This doesn't appear to be a playable web game.\n"
             f"Please send a valid game URL.\n\n"
             f"Examples:\n"
-            f"  • https://chromedino.com\n"
-            f"  • https://poki.com\n"
-            f"  • https://crazygames.com\n"
+            f"  https://chromedino.com\n"
+            f"  https://poki.com\n"
+            f"  https://crazygames.com\n"
             f"{'─' * 40}"
         )
-    
-    # Normal game results
+
     time_s  = metrics["time_survived"]
     actions = metrics["actions"]
     errors  = metrics.get("errors", 0)
@@ -218,15 +208,18 @@ def build_reply(url: str, metrics: dict, ai_analysis: str) -> str:
 def add_to_conversation(session_id: str, role: str, content: str):
     if session_id not in conversation_memory:
         conversation_memory[session_id] = []
-    
+
     conversation_memory[session_id].append({
-        "role": role,
-        "content": content,
+        "role":      role,
+        "content":   content,
         "timestamp": datetime.now().isoformat()
     })
-    
+
     if len(conversation_memory[session_id]) > MAX_CONVERSATION:
-        conversation_memory[session_id] = conversation_memory[session_id][-MAX_CONVERSATION:]
+        conversation_memory[session_id] = (
+            conversation_memory[session_id][-MAX_CONVERSATION:]
+        )
+
 
 def get_conversation_context(session_id: str) -> List[Dict]:
     if session_id not in conversation_memory:
@@ -238,44 +231,43 @@ def get_conversation_context(session_id: str) -> List[Dict]:
 def run_game_test(url: str, session_id: str = "default") -> dict:
     logger.info(f"Starting game test: {url}")
 
-    # Pre-check URL before running Selenium
     is_game, reason = is_likely_game_url(url)
-    
+
     if is_game is False:
         logger.info(f"Pre-check rejected: {reason}")
-        
+
         not_game_metrics = {
-            "time_survived": 0,
-            "actions": 0,
-            "performance": "NotGame",
-            "scores": [0],
-            "errors": 0,
-            "screenshots": [],
-            "page_info": {"title": "N/A", "has_canvas": False},
-            "url": url,
-            "load_failed": True,
-            "not_a_game": True,
+            "time_survived":    0,
+            "actions":          0,
+            "performance":      "NotGame",
+            "scores":           [0],
+            "errors":           0,
+            "screenshots":      [],
+            "page_info":        {"title": "N/A", "has_canvas": False},
+            "url":              url,
+            "load_failed":      True,
+            "not_a_game":       True,
             "game_check_reason": reason,
-            "tested_at": datetime.now().isoformat()
+            "tested_at":        datetime.now().isoformat()
         }
-        
+
         test_history.append({
-            "url": url,
-            "metrics": not_game_metrics,
+            "url":       url,
+            "metrics":   not_game_metrics,
             "ai_analysis": "Not a game link.",
-            "success": False,
+            "success":   False,
             "not_a_game": True,
-            "reason": reason,
+            "reason":    reason,
             "timestamp": datetime.now().isoformat()
         })
-        
+
         add_to_conversation(session_id, "user", url)
         add_to_conversation(session_id, "assistant", f"Wrong link: {reason}")
-        
+
         return {
-            "type": "test_result",
-            "reply": build_reply(url, not_game_metrics, "This URL does not appear to be a game."),
-            "metrics": not_game_metrics,
+            "type":        "test_result",
+            "reply":       build_reply(url, not_game_metrics, "This URL does not appear to be a game."),
+            "metrics":     not_game_metrics,
             "ai_analysis": "Not a game link."
         }
 
@@ -283,9 +275,9 @@ def run_game_test(url: str, session_id: str = "default") -> dict:
         logger.info("Running Selenium test...")
         metrics = run_test(url)
 
-        is_valid, reason = validate_metrics(metrics)
+        is_valid, val_reason = validate_metrics(metrics)
         if not is_valid:
-            raise ValueError(f"Invalid metrics: {reason}")
+            raise ValueError(f"Invalid metrics: {val_reason}")
 
         ai_analysis = "AI analysis unavailable."
         if metrics.get("performance") != "NotGame":
@@ -303,7 +295,7 @@ def run_game_test(url: str, session_id: str = "default") -> dict:
             "success":     metrics.get("performance") != "NotGame",
             "timestamp":   datetime.now().isoformat()
         })
-        
+
         add_to_conversation(session_id, "user", url)
         add_to_conversation(session_id, "assistant", reply[:500])
 
@@ -360,27 +352,25 @@ def process_message(message: str, session_id: str = None) -> dict:
 
     logger.info(f"Processing: {message[:80]}")
 
-    # Check for URL first
     url = extract_url(message)
 
     if url:
-        # URL detected - run game test
         return run_game_test(url, session_id)
-    
-    # No URL found - treat as chat message
+
     logger.info("No URL found - having AI conversation")
-    
+
     conversation_context = get_conversation_context(session_id)
     ai_reply = get_ai_game_conversation(message, conversation_context)
-    
+
     add_to_conversation(session_id, "user", message)
     add_to_conversation(session_id, "assistant", ai_reply)
-    
+
     return {
         "type":  "chat",
         "reply": ai_reply
     }
 
 
+# ── Get History ───────────────────────────────────────────────
 def get_test_history() -> list:
     return list(test_history)

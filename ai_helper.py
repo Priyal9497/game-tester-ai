@@ -8,7 +8,7 @@ from groq import Groq
 
 logger = logging.getLogger(__name__)
 
-# Initialize Groq Client
+# ── Initialize Groq Client ────────────────────────────────────
 api_key = os.getenv("GROQ_API_KEY")
 model   = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
 client  = None
@@ -20,7 +20,7 @@ if api_key:
     except Exception as e:
         logger.error(f"Groq init failed: {e}")
 else:
-    logger.warning("GROQ_API_KEY not found in .env")
+    logger.warning("GROQ_API_KEY not found in environment")
 
 
 # ── AI Test Analysis ──────────────────────────────────────────
@@ -29,10 +29,7 @@ def get_ai_test_analysis(url: str, metrics: dict) -> str:
     Generate AI analysis of Selenium test results using Groq
     """
     if client is None:
-        return (
-            "AI analysis unavailable.\n"
-            "Add GROQ_API_KEY to your .env file."
-        )
+        return "AI analysis unavailable. Add GROQ_API_KEY to your environment variables."
 
     page_info   = metrics.get("page_info", {})
     time_s      = metrics.get("time_survived", 0)
@@ -43,6 +40,16 @@ def get_ai_test_analysis(url: str, metrics: dict) -> str:
     has_game    = page_info.get("has_game_elements", False)
     page_title  = page_info.get("title", "Unknown")
     load_failed = metrics.get("load_failed", False)
+
+    # Short-circuit for failed loads
+    if load_failed:
+        return (
+            "VERDICT: No\n"
+            "ASSESSMENT: The page failed to load or render game elements.\n"
+            "ISSUES: Selenium could not access or detect playable content.\n"
+            "SUGGESTION: Check for anti-bot protection, iframe embedding, or JS-heavy lazy loading.\n"
+            "NEXT STEP: Test manually in a regular browser, then retry with updated wait strategies."
+        )
 
     prompt = f"""
 You are an expert browser game QA testing assistant.
@@ -110,11 +117,11 @@ def get_ai_game_conversation(user_message: str, conversation_history: list = Non
     """
     if client is None:
         return (
-            "I'm TestProbe AI, your game testing assistant! 🎮\n\n"
+            "I'm TestProbe AI, your game testing assistant!\n\n"
             "I can help you with:\n"
-            "• Testing game URLs for fairness\n"
-            "• Answering questions about web games\n"
-            "• Explaining how game testing works\n\n"
+            "  Testing game URLs for fairness\n"
+            "  Answering questions about web games\n"
+            "  Explaining how game testing works\n\n"
             "Just paste a game URL to test it, or ask me anything about games!"
         )
 
@@ -138,7 +145,7 @@ def get_ai_game_conversation(user_message: str, conversation_history: list = Non
                 )
             }
         ]
-        
+
         # Add conversation history (last 10 messages for context)
         if conversation_history and len(conversation_history) > 0:
             recent = conversation_history[-10:]
@@ -148,13 +155,13 @@ def get_ai_game_conversation(user_message: str, conversation_history: list = Non
                     "role": role,
                     "content": msg["content"]
                 })
-        
+
         # Add current message
         messages.append({
             "role": "user",
             "content": user_message
         })
-        
+
         logger.info("Requesting Groq chat reply with context...")
         completion = client.chat.completions.create(
             model=model,
@@ -169,10 +176,10 @@ def get_ai_game_conversation(user_message: str, conversation_history: list = Non
     except Exception as e:
         logger.error(f"Groq chat error: {str(e)[:100]}")
         return (
-            "I'm here to help you test games! 🎮\n\n"
+            "I'm here to help you test games!\n\n"
             "You can:\n"
-            "• Send me a game URL (like https://chromedino.com) to test it\n"
-            "• Ask me about game fairness or testing methods\n"
-            "• Get tips on finding good web games\n\n"
+            "  Send me a game URL (like https://chromedino.com) to test it\n"
+            "  Ask me about game fairness or testing methods\n"
+            "  Get tips on finding good web games\n\n"
             "What would you like to know about games?"
         )
