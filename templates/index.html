@@ -4,12 +4,1321 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TestProbe AI — Game Testing Platform</title>
-     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+/* ════════════════════════════════════════════════
+   TestProbe AI - Premium UI/UX Design v3.0
+   ════════════════════════════════════════════════ */
+
+/* ── CSS Variables ─────────────────────────────────────────── */
+:root {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #0f0f1a;
+    --bg-tertiary: #151520;
+    --bg-card: rgba(20, 20, 35, 0.7);
+    --bg-card-solid: #151520;
+
+    --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --gradient-4: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    --gradient-gold: linear-gradient(135deg, #f5af19 0%, #f12711 100%);
+
+    --accent-purple: #8b5cf6;
+    --accent-pink: #ec4899;
+    --accent-blue: #3b82f6;
+    --accent-cyan: #06b6d4;
+    --accent-green: #10b981;
+
+    --text-primary: #ffffff;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+
+    --glow-purple: 0 0 20px rgba(139, 92, 246, 0.4);
+    --glow-pink: 0 0 20px rgba(236, 72, 153, 0.4);
+    --glow-blue: 0 0 20px rgba(59, 130, 246, 0.4);
+
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --radius-xl: 28px;
+
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Inter', 'Space Grotesk', sans-serif;
+    background: var(--bg-primary);
+    background-color: #0a0a0f;
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* ── Animated Background ───────────────────────────────────── */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+        radial-gradient(circle at 20% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 40% 20%, rgba(59, 130, 246, 0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ── Grid Pattern ──────────────────────────────────────────── */
+.grid-pattern {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+    animation: gridFloat 20s linear infinite;
+    z-index: 0;
+}
+
+@keyframes gridFloat {
+    0%   { transform: translate(0, 0); }
+    100% { transform: translate(50px, 50px); }
+}
+
+/* ── Particles ─────────────────────────────────────────────── */
+.particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.particle {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.6;
+    animation: floatParticle linear infinite;
+}
+
+@keyframes floatParticle {
+    0% {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 0;
+    }
+    10% { opacity: 0.6; }
+    90% { opacity: 0.6; }
+    100% {
+        transform: translateY(-100vh) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+/* ── App Container ─────────────────────────────────────────── */
+.app-wrapper {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+}
+
+/* ── Glassmorphism Card ────────────────────────────────────── */
+.glass-card {
+    background: rgba(20, 20, 35, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-normal);
+    position: relative;
+    overflow: hidden;
+}
+
+.glass-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+    transition: left 0.5s ease;
+}
+
+.glass-card:hover::before { left: 100%; }
+
+.glass-card:hover {
+    border-color: rgba(139, 92, 246, 0.3);
+    transform: translateY(-2px);
+    box-shadow: var(--glow-purple);
+}
+
+/* ── Navbar ────────────────────────────────────────────────── */
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 32px;
+    background: rgba(10, 10, 15, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.nav-logo {
+    width: 40px;
+    height: 40px;
+    background: var(--gradient-1);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+    50%       { box-shadow: 0 0 0 10px rgba(139, 92, 246, 0); }
+}
+
+.nav-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: -0.5px;
+}
+
+.nav-title .accent {
+    background: var(--gradient-2);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.nav-center {
+    display: flex;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 4px;
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nav-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    border-radius: 40px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    user-select: none;
+}
+
+.nav-tab svg {
+    width: 16px;
+    height: 16px;
+    transition: all var(--transition-normal);
+}
+
+.nav-tab:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-tab.active {
+    background: var(--gradient-1);
+    color: white;
+    box-shadow: var(--glow-purple);
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.live-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent-green);
+}
+
+.live-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    animation: livePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.8); }
+}
+
+.nav-version {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50px;
+    color: var(--text-muted);
+}
+
+/* ── Main Content ──────────────────────────────────────────── */
+.main-content {
+    padding: 24px 32px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* ── Tab Panels ────────────────────────────────────────────── */
+.tab-panel {
+    display: none;
+    animation: fadeInUp 0.4s ease-out;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ════════════════════════════════════════════════
+   CHAT TAB
+   ════════════════════════════════════════════════ */
+.chat-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+    height: calc(100vh - 140px);
+}
+
+.chat-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.chat-header-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.bot-avatar {
+    width: 48px;
+    height: 48px;
+    background: var(--gradient-1);
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: rotateGlow 3s ease-in-out infinite;
+}
+
+@keyframes rotateGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+    50%       { box-shadow: 0 0 0 8px rgba(139, 92, 246, 0.2); }
+}
+
+.chat-header-info h2 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.status-text {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--accent-green);
+}
+
+.online-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    animation: livePulse 1.5s infinite;
+}
+
+.icon-btn {
+    width: 38px;
+    height: 38px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-normal);
+    color: var(--text-secondary);
+}
+
+.icon-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    transform: scale(1.05);
+}
+
+/* ── Messages ──────────────────────────────────────────────── */
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.chat-messages::-webkit-scrollbar { width: 4px; }
+.chat-messages::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+.chat-messages::-webkit-scrollbar-thumb {
+    background: var(--accent-purple);
+    border-radius: 10px;
+}
+
+.message {
+    display: flex;
+    gap: 12px;
+    animation: slideIn 0.3s ease-out;
+    max-width: 85%;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.bot-message  { align-self: flex-start; }
+.user-message {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.msg-icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    background: var(--gradient-1);
+    border-radius: var(--radius-md);
+}
+
+.user-message .msg-icon { background: var(--gradient-2); }
+
+.msg-content {
+    background: rgba(30, 30, 45, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+}
+
+.user-message .msg-content {
+    background: var(--gradient-1);
+    border: none;
+    color: white;
+}
+
+.msg-time {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+}
+
+.user-message .msg-time { text-align: right; }
+
+/* Welcome Message */
+.welcome-msg .msg-content {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(20, 20, 35, 0.9));
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+.welcome-tips {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 12px 0;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-md);
+}
+
+.tip-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.tip-icon { font-size: 1rem; }
+
+.example-url {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 8px;
+}
+
+.example-url code {
+    background: rgba(139, 92, 246, 0.2);
+    padding: 4px 10px;
+    border-radius: 20px;
+    color: var(--accent-purple);
+    font-family: monospace;
+}
+
+/* Loading */
+.loading-msg .msg-content {
+    background: rgba(139, 92, 246, 0.1);
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+.loading-dots {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.loading-dots span {
+    width: 8px;
+    height: 8px;
+    background: var(--accent-purple);
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+.loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes bounce {
+    0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+    40%           { transform: scale(1); opacity: 1; }
+}
+
+/* ── Chat Input ────────────────────────────────────────────── */
+.chat-input-area {
+    padding: 20px 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(30, 30, 45, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 60px;
+    padding: 6px 6px 6px 20px;
+    transition: all var(--transition-normal);
+}
+
+.input-wrapper:focus-within {
+    border-color: var(--accent-purple);
+    box-shadow: var(--glow-purple);
+}
+
+.input-icon { color: var(--text-muted); }
+
+#user-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    font-family: inherit;
+    padding: 12px 0;
+}
+
+#user-input::placeholder { color: var(--text-muted); }
+
+.send-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    background: var(--gradient-1);
+    border: none;
+    border-radius: 40px;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.send-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--glow-purple);
+}
+
+.send-btn:disabled {
+    opacity: 0.5;
+    transform: none;
+    cursor: not-allowed;
+}
+
+.input-hint {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 10px;
+    text-align: center;
+}
+
+.input-hint kbd {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.7rem;
+}
+
+/* ── Quick Stats Panel ─────────────────────────────────────── */
+.quick-stats-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+}
+
+.quick-stats-panel::-webkit-scrollbar { width: 4px; }
+.quick-stats-panel::-webkit-scrollbar-thumb {
+    background: var(--accent-purple);
+    border-radius: 10px;
+}
+
+.panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--accent-purple);
+    margin-bottom: 4px;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: rgba(20, 20, 35, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-normal);
+    cursor: pointer;
+}
+
+.stat-card:hover {
+    border-color: var(--accent-purple);
+    transform: translateX(4px);
+    background: rgba(139, 92, 246, 0.1);
+}
+
+.stat-icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: rgba(139, 92, 246, 0.15);
+    border-radius: var(--radius-md);
+}
+
+.stat-info { flex: 1; }
+
+.stat-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: block;
+}
+
+.stat-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent-purple);
+}
+
+.perf-card {
+    padding: 16px;
+    background: rgba(20, 20, 35, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-md);
+}
+
+.perf-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: block;
+}
+
+.perf-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-top: 4px;
+    display: block;
+    color: var(--text-primary);
+}
+
+.perf-bar {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    margin: 10px 0;
+    overflow: hidden;
+}
+
+.perf-bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 3px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.status-indicator {
+    width: 100%;
+    height: 3px;
+    border-radius: 2px;
+    margin-top: 8px;
+    background: rgba(255,255,255,0.1);
+}
+
+.status-high   { background: var(--gradient-4); box-shadow: 0 0 10px rgba(16,185,129,0.5); }
+.status-medium { background: var(--gradient-gold); box-shadow: 0 0 10px rgba(245,175,25,0.5); }
+.status-low    { background: var(--gradient-2); box-shadow: 0 0 10px rgba(236,72,153,0.5); }
+
+/* ── Info Card ─────────────────────────────────────────────── */
+.info-card {
+    padding: 16px;
+    background: rgba(20, 20, 35, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-md);
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    min-height: 32px;
+}
+
+.info-row:last-child { border-bottom: none; }
+
+.info-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-value {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    text-align: right;
+    max-width: 60%;
+    word-break: break-all;
+}
+
+/* ── Verdict Card ──────────────────────────────────────────── */
+.verdict-card {
+    border: 1px solid rgba(139, 92, 246, 0.2) !important;
+}
+
+.verdict-value {
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+}
+
+/* ════════════════════════════════════════════════
+   DASHBOARD TAB
+   ════════════════════════════════════════════════ */
+.dashboard-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.metrics-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+}
+
+.metric-big-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-lg);
+    padding: 24px 16px;
+    text-align: center;
+    transition: all var(--transition-normal);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.metric-big-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+    transition: left 0.5s ease;
+}
+
+.metric-big-card:hover::before { left: 100%; }
+
+.metric-big-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: var(--glow-purple);
+}
+
+.metric-big-icon {
+    font-size: 2rem;
+    margin-bottom: 12px;
+}
+
+.metric-big-val {
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    line-height: 1.2;
+}
+
+.metric-big-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 8px;
+}
+
+.metric-big-sub {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+/* ── Verdict + Game Type Row ───────────────────────────────── */
+.verdict-game-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.verdict-big-card,
+.game-type-big-card {
+    padding: 20px;
+}
+
+.verdict-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.verdict-main {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.verdict-label-big {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.verdict-value-big {
+    font-size: 1.8rem;
+    font-weight: 800;
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    display: inline-block;
+    width: fit-content;
+    color: var(--text-primary);
+}
+
+.verdict-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* ── Charts ────────────────────────────────────────────────── */
+.charts-row {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 24px;
+}
+
+.chart-card { padding: 20px; }
+
+.chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.chart-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.chart-badge {
+    font-size: 0.7rem;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--accent-purple);
+}
+
+.chart-wrapper {
+    height: 250px;
+    position: relative;
+}
+
+/* ── AI Tests Row ──────────────────────────────────────────── */
+.ai-tests-row {
+    padding: 20px;
+}
+
+.ai-tests-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.ai-test-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(139, 92, 246, 0.05);
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-normal);
+    animation: fadeInUp 0.3s ease-out;
+}
+
+.ai-test-item:hover {
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.4);
+    transform: translateY(-2px);
+}
+
+.test-check {
+    color: var(--accent-green);
+    font-weight: 700;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.test-name {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.no-tests-msg {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    padding: 16px;
+    text-align: center;
+    grid-column: 1 / -1;
+}
+
+/* ── Page Info Row ─────────────────────────────────────────── */
+.page-info-row { padding: 20px; }
+
+.pi-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+}
+
+.pi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.pi-item {
+    padding: 12px;
+    background: rgba(139, 92, 246, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-normal);
+}
+
+.pi-item:hover {
+    border-color: var(--accent-purple);
+    transform: translateY(-2px);
+}
+
+.pi-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.pi-value {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    word-break: break-all;
+}
+
+.url-val {
+    color: var(--accent-purple);
+    font-size: 0.8rem;
+}
+
+/* ════════════════════════════════════════════════
+   HISTORY TAB
+   ════════════════════════════════════════════════ */
+.history-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.history-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+}
+
+.history-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.history-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.outline-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 40px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    font-size: 0.85rem;
+}
+
+.outline-btn:hover {
+    border-color: var(--accent-purple);
+    color: var(--accent-purple);
+    transform: translateY(-2px);
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: rgba(20, 20, 35, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-normal);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.history-item:hover {
+    border-color: var(--accent-purple);
+    transform: translateX(4px);
+    background: rgba(139, 92, 246, 0.1);
+}
+
+.hi-left { flex: 1; min-width: 200px; }
+.hi-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.hi-url {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--accent-purple);
+    display: block;
+    word-break: break-all;
+}
+
+.hi-meta {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+    display: block;
+}
+
+.hi-badges-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+
+.hi-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--accent-green);
+}
+
+.badge-failed {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.badge-high   { background: rgba(16,185,129,0.15); color: var(--accent-green); }
+.badge-medium { background: rgba(234,179,8,0.15);  color: #eab308; }
+.badge-low    { background: rgba(239,68,68,0.15);   color: #ef4444; }
+
+.verdict-badge {
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--accent-purple);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.type-badge {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--accent-blue);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* ── History Empty ─────────────────────────────────────────── */
+.history-empty {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-muted);
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+}
+
+.empty-sub {
+    font-size: 0.8rem;
+    margin-top: 8px;
+}
+
+/* ── Toast Notifications ───────────────────────────────────── */
+.toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    background: rgba(20, 20, 35, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    animation: toastIn 0.3s ease-out;
+    box-shadow: var(--glow-purple);
+    min-width: 260px;
+    max-width: 360px;
+}
+
+.toast.success { border-color: rgba(16,185,129,0.4); }
+.toast.error   { border-color: rgba(239,68,68,0.4); }
+.toast.info    { border-color: rgba(139,92,246,0.4); }
+
+@keyframes toastIn {
+    from { opacity: 0; transform: translateX(100px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toastOut {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(100px); }
+}
+
+/* ── Animations ────────────────────────────────────────────── */
+@keyframes metricPop {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.metric-updated { animation: metricPop 0.3s ease-out; }
+
+/* ── Chat context msg ──────────────────────────────────────── */
+.chat-msg .msg-icon { background: var(--gradient-3); }
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+    .metrics-row { grid-template-columns: repeat(3, 1fr); }
+    .chat-layout { grid-template-columns: 1fr; height: auto; }
+    .verdict-game-row { grid-template-columns: 1fr; }
+    .ai-tests-grid { grid-template-columns: repeat(2, 1fr); }
+    .quick-stats-panel {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .main-content { padding: 16px; }
+    .navbar       { padding: 10px 16px; }
+    .nav-center   { display: none; }
+    .metrics-row  { grid-template-columns: repeat(2, 1fr); }
+    .charts-row   { grid-template-columns: 1fr; }
+    .pi-grid      { grid-template-columns: 1fr; }
+    .verdict-game-row { grid-template-columns: 1fr; }
+    .ai-tests-grid    { grid-template-columns: 1fr; }
+    .verdict-value-big { font-size: 1.4rem; }
+    .send-btn span { display: none; }
+    .send-btn      { padding: 10px 16px; }
+}
+</style>
 </head>
 <body>
 
@@ -18,29 +1327,27 @@
 <div class="particles" id="particles"></div>
 
 <script>
-    // Create floating particles - runs immediately
     (function createParticles() {
         const container = document.getElementById('particles');
         if (!container) return;
         for (let i = 0; i < 50; i++) {
-            const p    = document.createElement('div');
+            const p = document.createElement('div');
             p.className = 'particle';
-            const size  = Math.random() * 4 + 2;
-            p.style.width            = size + 'px';
-            p.style.height           = size + 'px';
-            p.style.left             = Math.random() * 100 + '%';
+            const size = Math.random() * 4 + 2;
+            p.style.width             = size + 'px';
+            p.style.height            = size + 'px';
+            p.style.left              = Math.random() * 100 + '%';
             p.style.animationDuration = (Math.random() * 10 + 10) + 's';
-            p.style.animationDelay   = (Math.random() * 5) + 's';
-            p.style.background       = `rgba(${Math.floor(Math.random()*100+139)}, ${Math.floor(Math.random()*100+92)}, 246, ${(Math.random()*0.3+0.1).toFixed(2)})`;
+            p.style.animationDelay    = (Math.random() * 5) + 's';
+            p.style.background        = `rgba(${Math.floor(Math.random()*100+139)}, ${Math.floor(Math.random()*100+92)}, 246, ${(Math.random()*0.3+0.1).toFixed(2)})`;
             container.appendChild(p);
         }
     })();
 </script>
 
-<!-- ── Main App ── -->
 <div class="app-wrapper">
 
-    <!-- ── Top Navigation ── -->
+    <!-- ── Navbar ── -->
     <nav class="navbar">
         <div class="nav-brand">
             <div class="nav-logo">
@@ -83,18 +1390,17 @@
                 <span class="live-dot"></span>
                 Live
             </div>
-            <div class="nav-version">v2.0</div>
+            <div class="nav-version">v3.0</div>
         </div>
     </nav>
 
-    <!-- ── Main Content ── -->
     <main class="main-content">
 
         <!-- ════ TAB: CHAT ════ -->
         <section class="tab-panel active" id="tab-chat">
             <div class="chat-layout">
 
-                <!-- Left: Chat Panel -->
+                <!-- Chat Panel -->
                 <div class="chat-panel glass-card">
                     <div class="chat-header">
                         <div class="chat-header-info">
@@ -110,7 +1416,7 @@
                                 <h2>TestProbe AI</h2>
                                 <p class="status-text">
                                     <span class="online-dot"></span>
-                                    Ready to test your game
+                                    Ready to analyze your game
                                 </p>
                             </div>
                         </div>
@@ -124,24 +1430,27 @@
                     </div>
 
                     <div class="chat-messages" id="chat-messages">
-                        <!-- Welcome Message -->
                         <div class="message bot-message welcome-msg">
                             <div class="msg-icon">🤖</div>
                             <div class="msg-content">
-                                <p><strong>Welcome to TestProbe AI!</strong></p>
-                                <p>I can automatically test web-based games using Selenium browser automation.</p>
+                                <p><strong>Welcome to TestProbe AI v3.0!</strong></p>
+                                <p>I analyze web games using Selenium automation + Groq AI.</p>
                                 <div class="welcome-tips">
                                     <div class="tip-item">
                                         <span class="tip-icon">🌐</span>
-                                        <span>Paste any game URL below</span>
+                                        <span>Paste any game URL to analyze it</span>
                                     </div>
                                     <div class="tip-item">
                                         <span class="tip-icon">🎮</span>
-                                        <span>I'll simulate gameplay automatically</span>
+                                        <span>I detect game type automatically</span>
                                     </div>
                                     <div class="tip-item">
-                                        <span class="tip-icon">📊</span>
-                                        <span>View live metrics in Dashboard tab</span>
+                                        <span class="tip-icon">👤</span>
+                                        <span>I tell if game was played by Human or AI</span>
+                                    </div>
+                                    <div class="tip-item">
+                                        <span class="tip-icon">💬</span>
+                                        <span>Ask me anything after analysis!</span>
                                     </div>
                                 </div>
                                 <p class="example-url">Try: <code>https://chromedino.com</code></p>
@@ -160,7 +1469,7 @@
                             <input
                                 type="text"
                                 id="user-input"
-                                placeholder="Paste game URL here... (e.g. https://game.com)"
+                                placeholder="Paste game URL here... (e.g. https://chromedino.com)"
                                 autocomplete="off"
                                 spellcheck="false"
                             />
@@ -169,17 +1478,18 @@
                                     <line x1="22" y1="2" x2="11" y2="13"/>
                                     <polygon points="22 2 15 22 11 13 2 9 22 2"/>
                                 </svg>
-                                <span>Run Test</span>
+                                <span>Analyze</span>
                             </button>
                         </div>
                         <p class="input-hint">
-                            Press <kbd>Enter</kbd> to run test • <kbd>Esc</kbd> to clear
+                            Press <kbd>Enter</kbd> to analyze • <kbd>Esc</kbd> to clear
                         </p>
                     </div>
                 </div>
 
                 <!-- Right: Quick Stats Panel -->
                 <div class="quick-stats-panel">
+
                     <div class="panel-title">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
                             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
@@ -228,15 +1538,19 @@
                         <div class="status-indicator" id="status-indicator"></div>
                     </div>
 
-                    <div class="panel-title" style="margin-top: 10px;">
+                    <div class="panel-title" style="margin-top:10px;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
                             <circle cx="12" cy="12" r="10"/>
                             <path d="M12 8v4l3 3"/>
                         </svg>
-                        Test Info
+                        Game Info
                     </div>
 
                     <div class="info-card">
+                        <div class="info-row">
+                            <span class="info-label">Game Type</span>
+                            <span class="info-value" id="game-type-val">—</span>
+                        </div>
                         <div class="info-row">
                             <span class="info-label">Canvas</span>
                             <span class="info-value" id="canvas-val">—</span>
@@ -250,8 +1564,37 @@
                             <span class="info-value" id="tested-at-val">—</span>
                         </div>
                     </div>
-                </div>
 
+                    <div class="info-card" style="margin-top:8px;">
+                        <div class="info-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+                            <span class="info-label">Game Description</span>
+                            <span class="info-value" id="game-desc-val"
+                                  style="font-size:0.78rem;color:var(--text-secondary);text-align:left;max-width:100%;">
+                                —
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="panel-title" style="margin-top:10px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        Human vs AI Detection
+                    </div>
+
+                    <div class="info-card verdict-card">
+                        <div class="info-row">
+                            <span class="info-label">Verdict</span>
+                            <span class="info-value verdict-value" id="verdict-val">—</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Confidence</span>
+                            <span class="info-value" id="verdict-conf-val">—</span>
+                        </div>
+                    </div>
+
+                </div>
             </div>
         </section>
 
@@ -292,6 +1635,55 @@
                     </div>
                 </div>
 
+                <div class="verdict-game-row">
+                    <div class="verdict-big-card glass-card">
+                        <div class="pi-header">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            Human vs AI Detection
+                        </div>
+                        <div class="verdict-content">
+                            <div class="verdict-main">
+                                <span class="verdict-label-big">Verdict</span>
+                                <span class="verdict-value-big" id="d-verdict-val">—</span>
+                            </div>
+                            <div class="verdict-details">
+                                <div class="info-row">
+                                    <span class="info-label">Confidence</span>
+                                    <span class="info-value" id="d-verdict-conf">—</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Reason</span>
+                                    <span class="info-value" id="d-verdict-reason" style="font-size:0.78rem;">—</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="game-type-big-card glass-card">
+                        <div class="pi-header">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
+                                <rect x="2" y="6" width="20" height="12" rx="2"/>
+                                <path d="M12 12h.01"/>
+                                <path d="M7 12h.01"/>
+                                <path d="M17 12h.01"/>
+                            </svg>
+                            Game Type Detection
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Detected Type</span>
+                            <span class="info-value" id="d-game-type">—</span>
+                        </div>
+                        <div class="info-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+                            <span class="info-label">Description</span>
+                            <span class="info-value" id="d-game-desc"
+                                  style="font-size:0.78rem;color:var(--text-secondary);text-align:left;max-width:100%;">—</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="charts-row">
                     <div class="chart-card glass-card">
                         <div class="chart-header">
@@ -321,6 +1713,19 @@
                         <div class="chart-wrapper">
                             <canvas id="radarChart"></canvas>
                         </div>
+                    </div>
+                </div>
+
+                <div class="ai-tests-row glass-card">
+                    <div class="pi-header">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
+                            <path d="M9 11l3 3L22 4"/>
+                            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                        </svg>
+                        AI Tests Performed
+                    </div>
+                    <div class="ai-tests-grid" id="d-tests-list">
+                        <div class="no-tests-msg">No tests run yet. Analyze a game first.</div>
                     </div>
                 </div>
 
@@ -401,11 +1806,671 @@
 
     </main>
 
-    <!-- ── Toast Container ── -->
     <div class="toast-container" id="toast-container"></div>
 
 </div>
 
-<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script>
+/* ════════════════════════════════════════════════
+   TestProbe AI - Main Script v3.0
+   ════════════════════════════════════════════════ */
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    // ── DOM Elements ─────────────────────────────
+    const chatMessages      = document.getElementById("chat-messages");
+    const userInput         = document.getElementById("user-input");
+    const sendBtn           = document.getElementById("send-btn");
+    const clearChatBtn      = document.getElementById("clear-chat-btn");
+    const toastContainer    = document.getElementById("toast-container");
+    const historyList       = document.getElementById("history-list");
+    const totalTestsEl      = document.getElementById("total-tests");
+    const refreshHistoryBtn = document.getElementById("refresh-history-btn");
+
+    // Chat sidebar elements
+    const timeVal         = document.getElementById("time-val");
+    const actionsVal      = document.getElementById("actions-val");
+    const apsVal          = document.getElementById("aps-val");
+    const errorsVal       = document.getElementById("errors-val");
+    const perfVal         = document.getElementById("perf-val");
+    const perfBarFill     = document.getElementById("perf-bar-fill");
+    const statusIndicator = document.getElementById("status-indicator");
+    const canvasVal       = document.getElementById("canvas-val");
+    const gameElVal       = document.getElementById("game-el-val");
+    const testedAtVal     = document.getElementById("tested-at-val");
+    const gameTypeVal     = document.getElementById("game-type-val");
+    const gameDescVal     = document.getElementById("game-desc-val");
+    const verdictVal      = document.getElementById("verdict-val");
+    const verdictConfVal  = document.getElementById("verdict-conf-val");
+
+    // Dashboard elements
+    const dTimeVal       = document.getElementById("d-time-val");
+    const dActionsVal    = document.getElementById("d-actions-val");
+    const dApsVal        = document.getElementById("d-aps-val");
+    const dErrorsVal     = document.getElementById("d-errors-val");
+    const dPerfVal       = document.getElementById("d-perf-val");
+    const dPerfCard      = document.getElementById("d-perf-card");
+    const chartBadge     = document.getElementById("chart-badge");
+    const dPageTitle     = document.getElementById("d-page-title");
+    const dCanvas        = document.getElementById("d-canvas");
+    const dGameEl        = document.getElementById("d-game-el");
+    const dPageReady     = document.getElementById("d-page-ready");
+    const dUrl           = document.getElementById("d-url");
+    const dTestedAt      = document.getElementById("d-tested-at");
+    const dGameType      = document.getElementById("d-game-type");
+    const dGameDesc      = document.getElementById("d-game-desc");
+    const dVerdictVal    = document.getElementById("d-verdict-val");
+    const dVerdictConf   = document.getElementById("d-verdict-conf");
+    const dVerdictReason = document.getElementById("d-verdict-reason");
+    const dTestsList     = document.getElementById("d-tests-list");
+
+    // ── State ────────────────────────────────────
+    let isTesting      = false;
+    let hasGameContext = false;
+    let currentGameUrl = null;
+
+    // ── Helpers ──────────────────────────────────
+    function getTime() {
+        return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function isUrl(text) {
+        return text.startsWith("http://") || text.startsWith("https://");
+    }
+
+    // ── Tab Navigation ───────────────────────────
+    const tabs   = document.querySelectorAll(".nav-tab");
+    const panels = document.querySelectorAll(".tab-panel");
+
+    tabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+            const target = tab.dataset.tab;
+            tabs.forEach(t   => t.classList.remove("active"));
+            panels.forEach(p => p.classList.remove("active"));
+            tab.classList.add("active");
+            document.getElementById(`tab-${target}`).classList.add("active");
+            if (target === "history") loadHistory();
+        });
+    });
+
+    // ── Charts ───────────────────────────────────
+    const chartDefaults = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                labels: { color: "#8899bb", font: { family: "Inter", size: 11 } }
+            }
+        }
+    };
+
+    const lineCtx  = document.getElementById("performanceChart").getContext("2d");
+    const lineChart = new Chart(lineCtx, {
+        type: "line",
+        data: {
+            labels: [],
+            datasets: [{
+                label: "Score Over Time",
+                data: [],
+                borderColor: "#38bdf8",
+                backgroundColor: "rgba(56,189,248,0.08)",
+                borderWidth: 2.5,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: "#0ea5e9",
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            ...chartDefaults,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid:  { color: "rgba(255,255,255,0.04)" },
+                    ticks: { color: "#8899bb", font: { size: 11 } }
+                },
+                x: {
+                    grid:  { color: "rgba(255,255,255,0.04)" },
+                    ticks: { color: "#8899bb", font: { size: 11 } }
+                }
+            }
+        }
+    });
+
+    const radarCtx  = document.getElementById("radarChart").getContext("2d");
+    const radarChart = new Chart(radarCtx, {
+        type: "radar",
+        data: {
+            labels: ["Time", "Actions", "Speed", "Stability", "Score"],
+            datasets: [{
+                label: "Performance",
+                data: [0, 0, 0, 0, 0],
+                borderColor: "#38bdf8",
+                backgroundColor: "rgba(56,189,248,0.1)",
+                borderWidth: 2,
+                pointBackgroundColor: "#0ea5e9",
+                pointRadius: 4
+            }]
+        },
+        options: {
+            ...chartDefaults,
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 100,
+                    grid:        { color: "rgba(255,255,255,0.06)" },
+                    angleLines:  { color: "rgba(255,255,255,0.06)" },
+                    ticks:       { display: false },
+                    pointLabels: { color: "#8899bb", font: { size: 11 } }
+                }
+            }
+        }
+    });
+
+    // ── Input Mode ───────────────────────────────
+    function updateInputMode() {
+        if (hasGameContext && currentGameUrl) {
+            try {
+                const host = new URL(currentGameUrl).hostname;
+                userInput.placeholder = `Ask about ${host}, or paste a new URL...`;
+            } catch {
+                userInput.placeholder = "Ask a question or paste a new URL...";
+            }
+            sendBtn.querySelector("span").textContent = "Send";
+        } else {
+            userInput.placeholder = "Paste game URL here... (e.g. https://chromedino.com)";
+            sendBtn.querySelector("span").textContent = "Analyze";
+        }
+    }
+
+    // ── Messages ─────────────────────────────────
+    function appendMessage(text, type = "bot", extraClass = "") {
+        const isUser  = type === "user";
+        const wrapper = document.createElement("div");
+        wrapper.className = `message ${isUser ? "user-message" : "bot-message"} ${extraClass}`;
+
+        const icon = document.createElement("div");
+        icon.className   = "msg-icon";
+        icon.textContent = isUser ? "👤" : "🤖";
+
+        const content = document.createElement("div");
+        content.className = "msg-content";
+
+        const textEl = document.createElement("p");
+        textEl.style.whiteSpace = "pre-wrap";
+        textEl.textContent      = text;
+
+        const timeEl = document.createElement("span");
+        timeEl.className   = "msg-time";
+        timeEl.textContent = getTime();
+
+        content.appendChild(textEl);
+        content.appendChild(timeEl);
+        wrapper.appendChild(icon);
+        wrapper.appendChild(content);
+        chatMessages.appendChild(wrapper);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        return wrapper;
+    }
+
+    function appendChatMessage(text, hasContext = false) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "message bot-message chat-msg";
+
+        const icon = document.createElement("div");
+        icon.className   = "msg-icon";
+        icon.textContent = hasContext ? "🎮" : "💬";
+
+        const content = document.createElement("div");
+        content.className = "msg-content";
+
+        const textEl = document.createElement("p");
+        textEl.style.whiteSpace = "pre-wrap";
+        textEl.textContent      = text;
+
+        const timeEl = document.createElement("span");
+        timeEl.className   = "msg-time";
+        timeEl.textContent = getTime();
+
+        content.appendChild(textEl);
+        content.appendChild(timeEl);
+        wrapper.appendChild(icon);
+        wrapper.appendChild(content);
+        chatMessages.appendChild(wrapper);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function appendLoadingMessage(urlMode = true) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "message bot-message loading-msg";
+        wrapper.id        = "loading-msg";
+
+        const icon = document.createElement("div");
+        icon.className   = "msg-icon";
+        icon.textContent = "🤖";
+
+        const content = document.createElement("div");
+        content.className = "msg-content";
+        content.innerHTML = urlMode
+            ? `<p>🚀 Opening browser and running test...</p>
+               <p style="font-size:0.8rem;color:var(--text-muted);margin-top:4px;">
+                   Detecting game type, testing AI, checking fairness...
+               </p>
+               <div class="loading-dots"><span></span><span></span><span></span></div>`
+            : `<p>💭 Thinking about your question...</p>
+               <div class="loading-dots"><span></span><span></span><span></span></div>`;
+
+        wrapper.appendChild(icon);
+        wrapper.appendChild(content);
+        chatMessages.appendChild(wrapper);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        return wrapper;
+    }
+
+    // ── Verdict Badge ────────────────────────────
+    function getVerdictConfig(verdict) {
+        const configs = {
+            "Human":     { emoji: "👤", color: "#10b981", bg: "rgba(16,185,129,0.15)" },
+            "AI/Bot":    { emoji: "🤖", color: "#8b5cf6", bg: "rgba(139,92,246,0.15)" },
+            "Uncertain": { emoji: "❓", color: "#eab308", bg: "rgba(234,179,8,0.15)"  }
+        };
+        return configs[verdict] || configs["Uncertain"];
+    }
+
+    // ── Perf Config ──────────────────────────────
+    function getPerfConfig(perf) {
+        const configs = {
+            "High":    { emoji: "🟢", color: "#22c55e", barWidth: "90%", badgeClass: "good"     },
+            "Medium":  { emoji: "🟡", color: "#eab308", barWidth: "55%", badgeClass: "warn"     },
+            "Low":     { emoji: "🔴", color: "#ef4444", barWidth: "25%", badgeClass: "bad"      },
+            "NotGame": { emoji: "❌", color: "#a78bfa", barWidth: "0%",  badgeClass: "not-game" }
+        };
+        return configs[perf] || configs["Low"];
+    }
+
+    function animateValue(el, value) {
+        if (!el) return;
+        el.textContent = value;
+        el.classList.remove("metric-updated");
+        void el.offsetWidth;
+        el.classList.add("metric-updated");
+    }
+
+    // ── Dashboard Update ─────────────────────────
+    function updateDashboard(metrics, humanVerdict) {
+        const time_s   = metrics.time_survived || 0;
+        const actions  = metrics.actions        || 0;
+        const errors   = metrics.errors         || 0;
+        const perf     = metrics.performance    || "Low";
+        const scores   = metrics.scores         || [0];
+        const pageInfo = metrics.page_info      || {};
+        const gameType = metrics.game_type      || {};
+        const aiTests  = metrics.ai_tests_performed || [];
+        const aps      = time_s > 0 ? (actions / time_s).toFixed(2) : "0";
+        const perfCfg  = getPerfConfig(perf);
+
+        // ── Sidebar stats ──────────────────────────────────────
+        animateValue(timeVal,    `${time_s}s`);
+        animateValue(actionsVal, actions);
+        animateValue(apsVal,     aps);
+        animateValue(errorsVal,  errors);
+
+        perfVal.textContent          = `${perfCfg.emoji} ${perf}`;
+        perfVal.style.color          = perfCfg.color;
+        perfBarFill.style.width      = perfCfg.barWidth;
+        perfBarFill.style.background = perfCfg.color;
+        statusIndicator.className    = "status-indicator";
+        statusIndicator.classList.add(`status-${perf.toLowerCase()}`);
+
+        canvasVal.textContent   = pageInfo.has_canvas
+            ? `✅ Yes (${pageInfo.canvas_count || 0})` : "❌ No";
+        gameElVal.textContent   = pageInfo.has_game_elements
+            ? "✅ Detected" : "❌ None";
+        testedAtVal.textContent = metrics.tested_at
+            ? new Date(metrics.tested_at).toLocaleTimeString() : "—";
+
+        if (gameTypeVal) gameTypeVal.textContent = gameType.primary_type || "—";
+        if (gameDescVal) gameDescVal.textContent = gameType.description  || "—";
+
+        if (humanVerdict && verdictVal) {
+            const vc = getVerdictConfig(humanVerdict.verdict);
+            verdictVal.textContent = `${vc.emoji} ${humanVerdict.verdict}`;
+            verdictVal.style.color = vc.color;
+        }
+        if (humanVerdict && verdictConfVal) {
+            verdictConfVal.textContent = `Confidence: ${humanVerdict.confidence}`;
+        }
+
+        // ── Dashboard stats ────────────────────────────────────
+        animateValue(dTimeVal,    `${time_s}s`);
+        animateValue(dActionsVal, actions);
+        animateValue(dApsVal,     aps);
+        animateValue(dErrorsVal,  errors);
+        animateValue(dPerfVal,    `${perfCfg.emoji} ${perf}`);
+        if (dPerfVal) dPerfVal.style.color = perfCfg.color;
+
+        if (dPerfCard) {
+            dPerfCard.className = "metric-big-card perf-metric";
+        }
+        if (chartBadge) {
+            chartBadge.textContent = perf;
+            chartBadge.className   = `chart-badge ${perfCfg.badgeClass}`;
+        }
+
+        if (dPageTitle) dPageTitle.textContent = pageInfo.title || "—";
+        if (dCanvas)    dCanvas.textContent    = pageInfo.has_canvas
+            ? `✅ Yes (${pageInfo.canvas_count || 0})` : "❌ No";
+        if (dGameEl)    dGameEl.textContent    = pageInfo.has_game_elements
+            ? "✅ Detected" : "❌ None";
+        if (dPageReady) dPageReady.textContent = pageInfo.page_ready ? "✅ Yes" : "⚠️ No";
+        if (dUrl)       dUrl.textContent       = metrics.url || "—";
+        if (dTestedAt)  dTestedAt.textContent  = metrics.tested_at
+            ? new Date(metrics.tested_at).toLocaleString() : "—";
+
+        if (dGameType) dGameType.textContent = gameType.primary_type
+            ? `${gameType.primary_type} (${gameType.confidence || "?"} confidence)` : "—";
+        if (dGameDesc) dGameDesc.textContent = gameType.description || "—";
+
+        if (humanVerdict) {
+            const vc = getVerdictConfig(humanVerdict.verdict);
+            if (dVerdictVal) {
+                dVerdictVal.textContent       = `${vc.emoji} ${humanVerdict.verdict}`;
+                dVerdictVal.style.color       = vc.color;
+                dVerdictVal.style.background  = vc.bg;
+                dVerdictVal.style.padding     = "4px 16px";
+                dVerdictVal.style.borderRadius = "20px";
+                dVerdictVal.style.fontWeight  = "700";
+            }
+            if (dVerdictConf)   dVerdictConf.textContent   = `Confidence: ${humanVerdict.confidence}`;
+            if (dVerdictReason) dVerdictReason.textContent = humanVerdict.reason || "—";
+        }
+
+        // ── AI Tests List ──────────────────────────────────────
+        if (dTestsList) {
+            if (aiTests.length > 0) {
+                dTestsList.innerHTML = aiTests.map(test => `
+                    <div class="ai-test-item">
+                        <span class="test-check">✓</span>
+                        <span class="test-name">${test}</span>
+                    </div>
+                `).join("");
+            } else {
+                dTestsList.innerHTML = `<div class="no-tests-msg">No tests data available.</div>`;
+            }
+        }
+
+        // ── Charts ─────────────────────────────────────────────
+        lineChart.data.labels           = scores.map((_, i) => `Step ${i}`);
+        lineChart.data.datasets[0].data = scores;
+        lineChart.update("active");
+
+        const timeScore      = Math.min((time_s / 30) * 100, 100);
+        const actionScore    = Math.min((actions / 25) * 100, 100);
+        const speedScore     = Math.min(parseFloat(aps) * 40, 100);
+        const stabilityScore = Math.max(100 - (errors * 20), 0);
+        const scoreVal       = scores.length > 1
+            ? Math.min((scores[scores.length - 1] / 200) * 100, 100) : 0;
+
+        radarChart.data.datasets[0].data = [
+            timeScore, actionScore, speedScore, stabilityScore, scoreVal
+        ];
+        radarChart.update("active");
+    }
+
+    // ── Handle Send ──────────────────────────────
+    async function handleSend() {
+        if (isTesting) {
+            showToast("Please wait...", "info");
+            return;
+        }
+
+        const text = userInput.value.trim();
+
+        if (!text) {
+            showToast(hasGameContext ? "Ask a question!" : "Please enter a game URL", "error");
+            userInput.focus();
+            return;
+        }
+
+        const inputIsUrl = isUrl(text);
+
+        // If no game context and not URL - guide user
+        if (!hasGameContext && !inputIsUrl) {
+            appendChatMessage(
+                "Please paste a game URL first so I can analyze it!\n\n" +
+                "Example: https://chromedino.com\n\n" +
+                "After analysis, you can ask me anything about the game! 🎮"
+            );
+            userInput.value = "";
+            return;
+        }
+
+        isTesting          = true;
+        sendBtn.disabled   = true;
+        userInput.disabled = true;
+
+        const messageToSend = text;
+        userInput.value     = "";
+
+        appendMessage(messageToSend, "user");
+        const loadingMsg = appendLoadingMessage(inputIsUrl);
+
+        const controller = new AbortController();
+        const timeoutId  = setTimeout(
+            () => controller.abort(),
+            inputIsUrl ? 120000 : 30000
+        );
+
+        try {
+            const response = await fetch("/test", {
+                method:  "POST",
+                headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                body:    JSON.stringify({ message: messageToSend }),
+                signal:  controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) throw new Error(`Server error: ${response.status}`);
+
+            const data = await response.json();
+
+            if (loadingMsg && loadingMsg.parentNode) loadingMsg.remove();
+
+            if (data.type === "error") {
+                appendMessage(data.reply, "bot", "error-msg");
+                showToast("Error occurred", "error");
+
+            } else if (data.type === "chat") {
+                appendChatMessage(data.reply, data.has_context || false);
+                showToast("AI responded", "info");
+                if (data.game_context) hasGameContext = true;
+
+            } else if (data.type === "test_result") {
+                const humanVerdict = data.human_verdict || null;
+
+                if (data.metrics && data.metrics.performance === "NotGame") {
+                    appendMessage(data.reply, "bot", "error-msg");
+                    showToast("Not a game link", "error");
+                    hasGameContext = false;
+                    currentGameUrl = null;
+
+                } else {
+                    appendMessage(data.reply, "bot", "result-msg");
+                    updateDashboard(data.metrics, humanVerdict);
+
+                    hasGameContext = true;
+                    currentGameUrl = data.metrics?.url || messageToSend;
+                    updateInputMode();
+
+                    showToast("Analysis complete! Ask me anything.", "success");
+
+                    // Game type toast
+                    const gt = data.metrics?.game_type;
+                    if (gt?.primary_type) {
+                        setTimeout(() => showToast(`🎮 Game: ${gt.primary_type}`, "info"), 1000);
+                    }
+
+                    // Verdict toast
+                    if (humanVerdict) {
+                        setTimeout(() => {
+                            const emoji = humanVerdict.verdict === "Human" ? "👤" : "🤖";
+                            showToast(
+                                `${emoji} ${humanVerdict.verdict} (${humanVerdict.confidence})`,
+                                humanVerdict.verdict === "Human" ? "success" : "info"
+                            );
+                        }, 2000);
+                    }
+
+                    // Auto switch to dashboard
+                    setTimeout(() => {
+                        tabs.forEach(t   => t.classList.remove("active"));
+                        panels.forEach(p => p.classList.remove("active"));
+                        document.querySelector('[data-tab="dashboard"]').classList.add("active");
+                        document.getElementById("tab-dashboard").classList.add("active");
+                    }, 2500);
+                }
+
+            } else {
+                appendMessage(data.reply || "Done!", "bot", "result-msg");
+                if (data.metrics) updateDashboard(data.metrics, data.human_verdict);
+                showToast("Done!", "success");
+            }
+
+        } catch (error) {
+            clearTimeout(timeoutId);
+            if (loadingMsg && loadingMsg.parentNode) loadingMsg.remove();
+
+            if (error.name === "AbortError") {
+                appendMessage("Request timed out. Please try again.", "bot", "error-msg");
+                showToast("Timed out", "error");
+            } else if (error.message.includes("Failed to fetch")) {
+                appendMessage("Cannot connect to server. Is the backend running?", "bot", "error-msg");
+                showToast("Connection error", "error");
+            } else {
+                appendMessage(`Error: ${error.message}`, "bot", "error-msg");
+                showToast("Error occurred", "error");
+            }
+
+        } finally {
+            isTesting          = false;
+            sendBtn.disabled   = false;
+            userInput.disabled = false;
+            userInput.focus();
+        }
+    }
+
+    // ── Event Listeners ──────────────────────────
+    sendBtn.addEventListener("click", handleSend);
+
+    userInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+        if (e.key === "Escape") userInput.value = "";
+    });
+
+    clearChatBtn.addEventListener("click", () => {
+        chatMessages.querySelectorAll(".message:not(.welcome-msg)").forEach(m => m.remove());
+        hasGameContext = false;
+        currentGameUrl = null;
+        updateInputMode();
+        showToast("Chat cleared", "info");
+    });
+
+    userInput.addEventListener("focus", () => {
+        userInput.parentElement.style.transform = "scale(1.01)";
+    });
+    userInput.addEventListener("blur", () => {
+        userInput.parentElement.style.transform = "scale(1)";
+    });
+
+    // ── History ──────────────────────────────────
+    async function loadHistory() {
+        try {
+            const res  = await fetch("/history");
+            if (!res.ok) return;
+            const data = await res.json();
+
+            totalTestsEl.textContent = `${data.total} tests run`;
+            historyList.innerHTML    = "";
+
+            if (!data.history || data.history.length === 0) {
+                historyList.innerHTML = `
+                    <div class="history-empty">
+                        <div class="empty-icon">📋</div>
+                        <p>No tests run yet</p>
+                        <p class="empty-sub">Run your first test in the Chat tab</p>
+                    </div>`;
+                return;
+            }
+
+            [...data.history].reverse().forEach(item => {
+                const el     = document.createElement("div");
+                el.className = `history-item`;
+                const time   = item.timestamp
+                    ? new Date(item.timestamp).toLocaleString() : "—";
+                const perf     = item.metrics?.performance || null;
+                const verdict  = item.human_verdict?.verdict || null;
+                const gameType = item.metrics?.game_type?.primary_type || null;
+
+                el.innerHTML = `
+                    <div class="hi-left">
+                        <span class="hi-url">${escapeHtml(item.url)}</span>
+                        <span class="hi-meta">
+                            ${time}
+                            ${item.metrics ? ` • ${item.metrics.time_survived}s • ${item.metrics.actions} actions` : ""}
+                            ${item.error ? ` • ${item.error}` : ""}
+                        </span>
+                        <div class="hi-badges-row">
+                            ${gameType ? `<span class="hi-badge type-badge">🎮 ${gameType}</span>` : ""}
+                        </div>
+                    </div>
+                    <div class="hi-right">
+                        ${verdict ? `<span class="hi-badge verdict-badge">${verdict === "Human" ? "👤" : "🤖"} ${verdict}</span>` : ""}
+                        ${perf ? `<span class="hi-badge badge-${perf.toLowerCase()}">${perf}</span>` : ""}
+                        <span class="hi-badge ${item.success ? "badge-success" : "badge-failed"}">
+                            ${item.success ? "✅ Passed" : "❌ Failed"}
+                        </span>
+                    </div>`;
+                historyList.appendChild(el);
+            });
+
+        } catch (err) {
+            console.error("History error:", err);
+        }
+    }
+
+    function escapeHtml(text) {
+        const d = document.createElement("div");
+        d.textContent = text;
+        return d.innerHTML;
+    }
+
+    refreshHistoryBtn.addEventListener("click", () => {
+        loadHistory();
+        showToast("History refreshed", "info");
+    });
+
+    // ── Toast ────────────────────────────────────
+    function showToast(message, type = "info") {
+        if (!toastContainer) return;
+        const toast   = document.createElement("div");
+        toast.className = `toast ${type}`;
+        const icons   = { success: "✅", error: "❌", info: "ℹ️" };
+        toast.innerHTML = `<span>${icons[type] || "ℹ️"}</span><span>${message}</span>`;
+        toastContainer.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = "toastOut 0.3s ease forwards";
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
+
+    // ── Init ─────────────────────────────────────
+    userInput.focus();
+    updateInputMode();
+    showToast("TestProbe AI v3.0 ready!", "success");
+
+});
+</script>
 </body>
 </html>

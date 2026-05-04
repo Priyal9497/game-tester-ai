@@ -1,5 +1,5 @@
 """
-TestProbe AI - Selenium Game Testing Engine
+TestProbe AI - Selenium Game Testing Engine (UPDATED)
 """
 
 import re
@@ -28,7 +28,7 @@ ERROR_TITLES = [
     "access denied", "502", "503", "504"
 ]
 
-# ── Known Game Sites (auto approve) ──────────────────────────
+# ── Known Game Sites (auto approve) - COMPLETE LIST ──────────
 KNOWN_GAME_DOMAINS = [
     "chromedino.com", "poki.com", "crazygames.com",
     "coolmathgames.com", "miniclip.com", "kongregate.com",
@@ -38,10 +38,9 @@ KNOWN_GAME_DOMAINS = [
     "playhop.com", "chess.com", "lichess.org",
     "tetris.com", "slither.io", "2048.org",
     "armorgames.com", "silvergames.com", "kizi.com",
-    "mousebreaker.com", "gamesbutler.com", "spele.nl",
-    "keygames.com", "lagged.com", "onlinegames.io",
-    "gamedistribution.com", "gamesgames.com",
-    "girlsgogames.com", "dressupgames.com"
+    "mousebreaker.com", "gamesbutler.com", "lagged.com",
+    "onlinegames.io", "gamedistribution.com", "mathplayground.com",
+    "hoodamath.com", "abcya.com", "turtlediary.com", "primarygames.com"
 ]
 
 # ── Known Non-Game Sites (auto reject) ───────────────────────
@@ -63,8 +62,8 @@ KNOWN_NON_GAME_DOMAINS = [
 # ── ChromeDriver Manual Finder ────────────────────────────────
 def find_chromedriver_manually():
     """
-    Manually search WDM cache for correct chromedriver.exe
-    Fixes bug where WDM returns THIRD_PARTY_NOTICES instead of exe
+    Manually search WDM cache for correct chromedriver
+    Works on both Windows and Linux/macOS
     """
     wdm_base = os.path.expanduser("~/.wdm/drivers/chromedriver")
 
@@ -75,14 +74,14 @@ def find_chromedriver_manually():
     found = []
     for root, dirs, files in os.walk(wdm_base):
         for f in files:
-            # ONLY pick actual chromedriver.exe
-            if f == "chromedriver.exe":
+            # Platform-agnostic check
+            if f in ["chromedriver.exe", "chromedriver"]:
                 full_path = os.path.join(root, f)
                 found.append(full_path)
                 logger.info(f"Found: {full_path}")
 
     if not found:
-        logger.warning("No chromedriver.exe found in WDM cache")
+        logger.warning("No chromedriver found in WDM cache")
         return None
 
     # Newest first
@@ -94,14 +93,17 @@ def find_chromedriver_manually():
 # ── WDM Path Fixer ────────────────────────────────────────────
 def fix_wdm_path(raw_path):
     """
-    WDM sometimes returns THIRD_PARTY_NOTICES instead of chromedriver.exe
-    This finds the real exe in the same or parent folder
+    WDM sometimes returns THIRD_PARTY_NOTICES instead of chromedriver
+    This finds the real driver in the same or parent folder
     """
     if not raw_path:
         return raw_path
 
-    if raw_path.endswith("chromedriver.exe") and os.path.exists(raw_path):
-        return raw_path
+    # Check if it's already a valid driver
+    driver_names = ["chromedriver.exe", "chromedriver"]
+    for name in driver_names:
+        if raw_path.endswith(name) and os.path.exists(raw_path):
+            return raw_path
 
     folder = os.path.dirname(raw_path)
     logger.info(f"Fixing WDM path - searching in: {folder}")
@@ -109,7 +111,7 @@ def fix_wdm_path(raw_path):
     # Search current folder
     for root, dirs, files in os.walk(folder):
         for f in files:
-            if f == "chromedriver.exe":
+            if f in driver_names:
                 full = os.path.join(root, f)
                 logger.info(f"Fixed: {full}")
                 return full
@@ -118,12 +120,12 @@ def fix_wdm_path(raw_path):
     parent = os.path.dirname(folder)
     for root, dirs, files in os.walk(parent):
         for f in files:
-            if f == "chromedriver.exe":
+            if f in driver_names:
                 full = os.path.join(root, f)
                 logger.info(f"Fixed (parent): {full}")
                 return full
 
-    logger.error("Could not fix WDM path - chromedriver.exe not found")
+    logger.error("Could not fix WDM path - chromedriver not found")
     return raw_path
 
 
@@ -135,7 +137,7 @@ def create_driver():
 
     options = Options()
 
-    # ── Headless mode (required for Render) ───────
+    # Headless mode (required for Render)
     options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
@@ -143,14 +145,14 @@ def create_driver():
     options.add_argument("--disable-software-rasterizer")
     options.add_argument("--window-size=1280,800")
 
-    # ── Anti bot detection ─────────────────────────
+    # Anti bot detection
     options.add_argument("--disable-blink-features=AutomationControlled")
     options.add_experimental_option(
         "excludeSwitches", ["enable-automation", "enable-logging"]
     )
     options.add_experimental_option("useAutomationExtension", False)
 
-    # ── Stability flags ────────────────────────────
+    # Stability flags
     options.add_argument("--disable-extensions")
     options.add_argument("--disable-infobars")
     options.add_argument("--disable-plugins")
@@ -167,19 +169,19 @@ def create_driver():
     options.add_argument("--log-level=3")
     options.add_argument("--silent")
 
-    # ── Game compatibility flags ───────────────────
+    # Game compatibility flags
     options.add_argument("--enable-javascript")
     options.add_argument("--autoplay-policy=no-user-gesture-required")
     options.add_argument("--disable-web-security")
 
-    # ── Realistic user agent ───────────────────────
+    # Realistic user agent
     options.add_argument(
         "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/120.0.0.0 Safari/537.36"
     )
 
-    # ── Browser preferences ────────────────────────
+    # Browser preferences
     prefs = {
         "profile.default_content_setting_values.notifications": 2,
         "profile.default_content_settings.popups": 0,
@@ -189,7 +191,7 @@ def create_driver():
     }
     options.add_experimental_option("prefs", prefs)
 
-    # ── Smart ChromeDriver detection ───────────────
+    # Smart ChromeDriver detection
     chrome_binary     = os.getenv("GOOGLE_CHROME_BIN")
     chromedriver_path = os.getenv("CHROMEDRIVER_PATH")
 
@@ -226,7 +228,7 @@ def create_driver():
     driver.set_page_load_timeout(PAGE_LOAD_TIMEOUT)
     driver.implicitly_wait(2)
 
-    # ── Remove webdriver fingerprint ──────────────
+    # Remove webdriver fingerprint
     driver.execute_cdp_cmd(
         "Page.addScriptToEvaluateOnNewDocument",
         {
@@ -713,10 +715,10 @@ def run_test(url):
     game_type_info = {}
 
     try:
-        # ── Create Browser ─────────────────────────
+        # Create Browser
         driver = create_driver()
 
-        # ── Load Page ──────────────────────────────
+        # Load Page
         logger.info("Loading page...")
         try:
             driver.get(url)
@@ -739,13 +741,13 @@ def run_test(url):
                 load_failed = True
                 logger.warning(f"Connection failed: {url}")
 
-        # ── Browser alive check ────────────────────
+        # Browser alive check
         if not is_browser_alive(driver):
             logger.error("Browser died after page load")
             load_failed = True
 
         else:
-            # ── Wait for page ready ────────────────
+            # Wait for page ready
             try:
                 WebDriverWait(driver, 10).until(
                     lambda d: d.execute_script(
@@ -760,18 +762,18 @@ def run_test(url):
                 load_failed = True
 
             else:
-                # ── Get page info ──────────────────
+                # Get page info
                 page_info = verify_game_page(driver)
                 logger.info(f"Title     : {page_info.get('title', '?')}")
                 logger.info(f"Canvas    : {page_info.get('has_canvas', False)}")
                 logger.info(f"Error page: {page_info.get('is_error_page', False)}")
 
-                # ── Error page check ───────────────
+                # Error page check
                 if page_info.get("is_error_page"):
                     load_failed = True
                     logger.warning(f"Error page: {page_info.get('title', '')}")
 
-                # ── Game authenticity check ────────
+                # Game authenticity check
                 if not load_failed:
                     is_game, game_reason = is_game_page_authentic(driver, url)
                     logger.info(f"Game check: {is_game} | {game_reason}")
@@ -802,7 +804,7 @@ def run_test(url):
                     if is_game is None:
                         logger.info(f"Uncertain - trying: {game_reason}")
 
-                # ── Wait for game assets ───────────
+                # Wait for game assets
                 logger.info(f"Waiting {GAME_LOAD_WAIT}s for game assets...")
                 time.sleep(GAME_LOAD_WAIT)
 
@@ -811,7 +813,7 @@ def run_test(url):
                     load_failed = True
 
                 else:
-                    # ── Focus the page ─────────────
+                    # Focus the page
                     body = None
                     try:
                         body = driver.find_element(By.TAG_NAME, "body")
@@ -824,7 +826,7 @@ def run_test(url):
                         except Exception:
                             logger.warning("Could not focus page")
 
-                    # ── Click canvas to start game ─
+                    # Click canvas to start game
                     try:
                         canvases = driver.find_elements(By.TAG_NAME, "canvas")
                         if canvases:
@@ -836,7 +838,7 @@ def run_test(url):
                     except Exception:
                         pass
 
-                    # ── Run action rounds ───────────
+                    # Run action rounds
                     logger.info(f"Running {ACTION_ROUNDS} action rounds...")
 
                     for i in range(ACTION_ROUNDS):
@@ -921,7 +923,7 @@ def run_test(url):
             except Exception:
                 pass
 
-    # ── Build Results ─────────────────────────────
+    # Build Results
     end_time      = time.time()
     time_survived = round(end_time - start_time, 2)
 
