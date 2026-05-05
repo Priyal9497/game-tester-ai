@@ -152,13 +152,10 @@ def is_likely_game_url(url: str) -> tuple:
     """
     Check if URL looks like a game site.
     Returns (is_likely, reason)
-    True  = definitely game
-    False = definitely NOT game
-    None  = uncertain, let Selenium decide
     """
     url_lower = url.lower()
 
-    # ✅ Explicitly NOT game domains
+    # ✅ NOT game domains - reject these
     not_game_domains = [
         "google.com", "facebook.com", "twitter.com",
         "instagram.com", "youtube.com", "linkedin.com",
@@ -168,57 +165,35 @@ def is_likely_game_url(url: str) -> tuple:
         "spotify.com", "apple.com", "microsoft.com"
     ]
 
-    try:
-        parsed_url = urlparse(
-            url if '://' in url else 'https://' + url
-        )
-        domain = parsed_url.netloc.lower()
-
-        if domain.startswith('www.'):
-            domain = domain[4:]
-
-        # Check NOT game domains first
-        for not_game in not_game_domains:
-            if not_game in domain:
-                return (False, f"Non-game domain: {domain}")
-
-    except Exception as e:
-        logger.warning(f"URL parse error: {e}")
-
-    # Known game domains
+    # ✅ Known game domains - always allow these
     game_domains = [
-        "chromedino.com", "chrome://dino",
-        "poki.com", "crazygames.com",
-        "coolmathgames.com", "miniclip.com",
-        "kongregate.com", "newgrounds.com",
-        "itch.io", "y8.com", "friv.com",
-        "addictinggames.com", "agame.com",
-        "nitrome.com", "gamepix.com",
-        "gameflare.com", "html5games.com",
-        "playhop.com", "chess.com",
-        "lichess.org", "tetris.com",
-        "slither.io", "2048.org",
-        "armorgames.com", "silvergames.com",
-        "kizi.com", "onlinegames.io",
-        "coolmath-games.com", "abcya.com"
+        "chromedino.com", "poki.com", "crazygames.com",
+        "coolmathgames.com", "miniclip.com", "kongregate.com",
+        "newgrounds.com", "itch.io", "y8.com", "friv.com",
+        "addictinggames.com", "agame.com", "nitrome.com",
+        "gamepix.com", "gameflare.com", "html5games.com",
+        "playhop.com", "chess.com", "lichess.org",
+        "tetris.com", "slither.io", "2048.org",
+        "armorgames.com", "silvergames.com", "kizi.com",
+        "onlinegames.io", "gamedistribution.com",
+        "coolmath-games.com", "abcya.com", "mathplayground.com",
+        "hoodamath.com", "primarygames.com", "arcadeprehacks.com",
+        "mousebreaker.com", "lagged.com", "kizi.com",
+        "gamepix.com", "html5games.com"
     ]
 
-    try:
-        parsed_url = urlparse(
-            url if '://' in url else 'https://' + url
-        )
-        domain = parsed_url.netloc.lower()
-        if domain.startswith('www.'):
-            domain = domain[4:]
+    # ✅ SIMPLE CHECK - just use 'in' on the full URL string
+    # This avoids all domain parsing bugs
+    for not_game in not_game_domains:
+        if not_game in url_lower:
+            return (False, f"Non-game domain detected")
 
-        for game_domain in game_domains:
-            if game_domain in domain:
-                return (True, f"Known game domain: {domain}")
+    # ✅ Check game domains directly in URL string
+    for game_domain in game_domains:
+        if game_domain in url_lower:
+            return (True, f"Known game domain: {game_domain}")
 
-    except Exception as e:
-        logger.warning(f"URL parse error: {e}")
-
-    # Check for game-related paths
+    # ✅ Check game paths
     game_paths = [
         "/game/", "/play/", "/games/", "/arcade/",
         "game.html", "play.html", "/gameplay",
@@ -229,7 +204,7 @@ def is_likely_game_url(url: str) -> tuple:
         if path in url_lower:
             return (True, f"Game path detected: {path}")
 
-    # ✅ Return None (uncertain) — let Selenium test it
+    # ✅ Default - let tester decide, don't reject!
     return (None, "Will test with browser")
 
 
