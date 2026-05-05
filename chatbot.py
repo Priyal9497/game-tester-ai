@@ -13,7 +13,8 @@ from tester import run_test
 from ai_helper import (
     get_ai_test_analysis,
     get_ai_game_conversation,
-    get_human_ai_verdict
+    get_human_ai_verdict,
+    get_groq_client        # ✅ Import to check if Groq available
 )
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,7 @@ logger = logging.getLogger(__name__)
 # ── Constants ─────────────────────────────────────────────────
 MAX_HISTORY      = 50
 MAX_CONVERSATION = 20
+MAX_SESSIONS     = 100    # ✅ NEW — Prevent memory leak
 
 REQUIRED_METRICS = {
     "time_survived", "actions", "performance", "scores"
@@ -59,25 +61,39 @@ conversation_memory: Dict[str, List[Dict]] = {}
 current_game_context: Dict[str, Dict] = {}
 
 
-# ── URL Extraction (FIXED) ────────────────────────────────────
+# ── Session Memory Management ─────────────────────────────────
+def cleanup_old_sessions():
+    """
+    ✅ FIXED — Prevent memory leak
+    Remove oldest sessions when limit reached
+    """
+    if len(conversation_memory) > MAX_SESSIONS:
+        # Remove oldest 20 sessions
+        keys_to_remove = list(conversation_memory.keys())[:20]
+        for key in keys_to_remove:
+            conversation_memory.pop(key, None)
+            current_game_context.pop(key, None)
+        logger.info(f"Cleaned up {len(keys_to_remove)} old sessions")
+
+
+# ── URL Extraction ────────────────────────────────────────────
 def extract_url(text: str) -> Optional[str]:
     """
-    Extract first valid URL from text - SIMPLIFIED & RELIABLE VERSION
+    Extract first valid URL from text
     """
     if not text:
         return None
-    
+
     text = text.strip()
-    
+
     # Pattern 1: Full http:// or https:// URLs
     http_pattern = r'https?://[^\s<>"\'{}|\\^`\[\]]+'
     matches = re.findall(http_pattern, text, re.IGNORECASE)
     if matches:
         url = matches[0]
-        # Clean trailing punctuation
         url = re.sub(r'[.,;:!?)]+$', '', url)
         return url
-    
+
     # Pattern 2: www. URLs (no protocol)
     www_pattern = r'www\.[a-zA-Z0-9][-a-zA-Z0-9]*(?:\.[a-zA-Z]{2,})+\S*'
     matches = re.findall(www_pattern, text, re.IGNORECASE)
@@ -85,38 +101,29 @@ def extract_url(text: str) -> Optional[str]:
         url = 'https://' + matches[0]
         url = re.sub(r'[.,;:!?)]+$', '', url)
         return url
-    
-    # Pattern 3: Simple domain like "chromedino.com" or "poki.com"
-    domain_pattern = r'\b([a-zA-Z0-9][-a-zA-Z0-9]*\.)+[a-zA-Z]{2,}(?:/[\w\-/=%?]*)?\b'
+
+    # Pattern 3: Simple domain
+    domain_pattern = (
+        r'\b([a-zA-Z0-9][-a-zA-Z0-9]*\.)+[a-zA-Z]{2,}'
+        r'(?:/[\w\-/=%?]*)?\b'
+    )
     matches = re.findall(domain_pattern, text, re.IGNORECASE)
     if matches:
         domain = matches[0]
-        # Make sure it's a real domain
-        if '.' in domain and len(domain) > 4:
-            # Don't match email addresses
-            if '@' not in domain:
-                url = 'https://' + domain
-                url = re.sub(r'[.,;:!?)]+$', '', url)
-                return url
-    
-    # Pattern 4: Chrome internal URLs (for dino game)
-    chrome_pattern = r'chrome://[^\s<>"\']+'
-    matches = re.findall(chrome_pattern, text, re.IGNORECASE)
-    if matches:
-        return matches[0]
-    
+        if '.' in domain and len(domain) > 4 and '@' not in domain:
+            url = 'https://' + domain
+            url = re.sub(r'[.,;:!?)]+$', '', url)
+            return url
+
     return None
 
 
 def manual_url_extract(text: str) -> Optional[str]:
     """
-    Manual URL extraction as fallback - very simple approach
+    ✅ FIXED — Only extract from KNOWN game domains
+    No longer matches random .com domains
     """
-    # Very simple - find anything that looks like a domain
-    domain_pattern = r'\b([a-zA-Z0-9][-a-zA-Z0-9]*\.)+[a-zA-Z]{2,}\b'
-    matches = re.findall(domain_pattern, text)
-    
-    # Common game domains for quick matching
+    # Only known game domains
     game_domains = [
         "chromedino.com", "poki.com", "crazygames.com",
         "coolmathgames.com", "miniclip.com", "kongregate.com",
@@ -125,90 +132,104 @@ def manual_url_extract(text: str) -> Optional[str]:
         "gamepix.com", "gameflare.com", "html5games.com",
         "playhop.com", "chess.com", "lichess.org",
         "tetris.com", "slither.io", "2048.org",
-        "armorgames.com", "silvergames.com", "kizi.com"
+        "armorgames.com", "silvergames.com", "kizi.com",
+        "onlinegames.io", "gamedistribution.com",
+        "coolmath-games.com", "abcya.com"
     ]
-    
-    for match in matches:
-        if '.' in match and len(match) > 4:
-            # Check if it's in our game list
-            for game in game_domains:
-                if game in match:
-                    return 'https://' + match
-    
-    # If it has .com, .io, .org and looks like a domain, try it
-    if matches:
-        for match in matches:
-            if any(ext in match for ext in ['.com', '.io', '.org', '.net', '.game']):
-                return 'https://' + match
-    
+
+    text_lower = text.lower()
+
+    # ✅ Only match if it's a known game domain
+    for domain in game_domains:
+        if domain in text_lower:
+            return 'https://' + domain
+
     return None
 
 
-# ── Game Link Detection (FIXED) ────────────────────────────
+# ── Game Link Detection ───────────────────────────────────────
 def is_likely_game_url(url: str) -> tuple:
     """
     Check if URL looks like a game site.
     Returns (is_likely, reason)
-    True = game, False = not game, None = uncertain
+    True  = definitely game
+    False = definitely NOT game
+    None  = uncertain, let Selenium decide
     """
     url_lower = url.lower()
-    
-    # EXTENDED GAME DOMAINS
+
+    # ✅ Explicitly NOT game domains
+    not_game_domains = [
+        "google.com", "facebook.com", "twitter.com",
+        "instagram.com", "youtube.com", "linkedin.com",
+        "amazon.com", "wikipedia.org", "reddit.com",
+        "github.com", "stackoverflow.com", "gmail.com",
+        "outlook.com", "yahoo.com", "netflix.com",
+        "spotify.com", "apple.com", "microsoft.com"
+    ]
+
+    try:
+        parsed_url = urlparse(
+            url if '://' in url else 'https://' + url
+        )
+        domain = parsed_url.netloc.lower()
+
+        if domain.startswith('www.'):
+            domain = domain[4:]
+
+        # Check NOT game domains first
+        for not_game in not_game_domains:
+            if not_game in domain:
+                return (False, f"Non-game domain: {domain}")
+
+    except Exception as e:
+        logger.warning(f"URL parse error: {e}")
+
+    # Known game domains
     game_domains = [
         "chromedino.com", "chrome://dino",
-        "poki.com", "pokigame.com",
-        "crazygames.com", "crazygames",
-        "coolmathgames.com", "coolmath",
-        "miniclip.com", "kongregate.com",
-        "newgrounds.com", "itch.io",
-        "y8.com", "friv.com", "friv",
+        "poki.com", "crazygames.com",
+        "coolmathgames.com", "miniclip.com",
+        "kongregate.com", "newgrounds.com",
+        "itch.io", "y8.com", "friv.com",
         "addictinggames.com", "agame.com",
         "nitrome.com", "gamepix.com",
         "gameflare.com", "html5games.com",
         "playhop.com", "chess.com",
         "lichess.org", "tetris.com",
-        "slither.io", "2048.org", "2048",
+        "slither.io", "2048.org",
         "armorgames.com", "silvergames.com",
-        "kizi.com", "mousebreaker.com",
-        "gamesbutler.com", "lagged.com",
-        "onlinegames.io", "gamedistribution.com",
-        "mathplayground.com", "hoodamath.com",
-        "abcya.com", "coolmath-games.com",
-        "primarygames.com", "turtlediary.com",
-        "arcadeprehacks.com", "hoodamath",
-        "mathplayground", "abcya"
+        "kizi.com", "onlinegames.io",
+        "coolmath-games.com", "abcya.com"
     ]
-    
-    # Check each game domain
+
     try:
-        # Parse the URL
-        parsed_url = urlparse(url if '://' in url else 'https://' + url)
+        parsed_url = urlparse(
+            url if '://' in url else 'https://' + url
+        )
         domain = parsed_url.netloc.lower()
-        
-        # Remove www prefix
         if domain.startswith('www.'):
             domain = domain[4:]
-        
-        # Check exact match or partial match
+
         for game_domain in game_domains:
-            if game_domain in domain or domain == game_domain:
+            if game_domain in domain:
                 return (True, f"Known game domain: {domain}")
+
     except Exception as e:
         logger.warning(f"URL parse error: {e}")
-    
+
     # Check for game-related paths
     game_paths = [
         "/game/", "/play/", "/games/", "/arcade/",
         "game.html", "play.html", "/gameplay",
-        "/puzzle/", "/action/", "/racing/", "/shooter/",
-        "/adventure/", "/strategy/", "/sports/"
+        "/puzzle/", "/action/", "/racing/", "/shooter/"
     ]
-    
+
     for path in game_paths:
         if path in url_lower:
-            return (True, f"Game path: {path}")
-    
-    # Default: Let Selenium test it
+            return (True, f"Game path detected: {path}")
+
+    # ✅ Return None (uncertain) — let Selenium test it
     return (None, "Will test with browser")
 
 
@@ -244,7 +265,7 @@ def build_reply(
     ai_analysis: str,
     human_verdict: dict = None
 ) -> str:
-    perf = metrics["performance"]
+    perf = metrics.get("performance", "Low")
 
     if perf == "NotGame":
         reason = metrics.get("game_check_reason", "No game detected")
@@ -262,12 +283,14 @@ def build_reply(
             f"{'─' * 40}"
         )
 
-    time_s     = metrics["time_survived"]
-    actions    = metrics["actions"]
-    errors     = metrics.get("errors", 0)
-    config     = PERF_CONFIG.get(perf, PERF_CONFIG["Low"])
-    aps        = round(actions / time_s, 2) if time_s > 0 else 0
-    game_type  = metrics.get("game_type", {})
+    time_s    = metrics.get("time_survived", 0)
+    actions   = metrics.get("actions", 0)
+    errors    = metrics.get("errors", 0)
+    config    = PERF_CONFIG.get(perf, PERF_CONFIG["Low"])
+    game_type = metrics.get("game_type", {})
+
+    # ✅ FIXED — Safe division
+    aps = round(actions / max(float(time_s), 1.0), 2)
 
     # Game type section
     game_type_section = ""
@@ -281,11 +304,11 @@ def build_reply(
     # Human/AI verdict section
     verdict_section = ""
     if human_verdict:
-        verdict      = human_verdict.get("verdict", "Unknown")
-        confidence   = human_verdict.get("confidence", "Low")
+        verdict = human_verdict.get("verdict", "Unknown")
+        confidence = human_verdict.get("confidence", "Low")
         verdict_emoji = {
-            "Human":    "👤",
-            "AI/Bot":   "🤖",
+            "Human":     "👤",
+            "AI/Bot":    "🤖",
             "Uncertain": "❓"
         }.get(verdict, "❓")
 
@@ -297,11 +320,11 @@ def build_reply(
             f"Reason         : {human_verdict.get('reason', '')}\n"
         )
 
-    # AI tests performed section
+    # AI tests section
     tests_section = ""
     ai_tests = metrics.get("ai_tests_performed", [])
     if ai_tests:
-        tests_list    = "\n".join([f"  ✓ {t}" for t in ai_tests[:5]])
+        tests_list = "\n".join([f"  ✓ {t}" for t in ai_tests[:5]])
         tests_section = f"\nAI TESTS PERFORMED:\n{tests_list}\n"
 
     return (
@@ -328,6 +351,9 @@ def build_reply(
 
 # ── Conversation Memory Management ────────────────────────────
 def add_to_conversation(session_id: str, role: str, content: str):
+    # ✅ Cleanup before adding new session
+    cleanup_old_sessions()
+
     if session_id not in conversation_memory:
         conversation_memory[session_id] = []
 
@@ -350,43 +376,47 @@ def get_conversation_context(session_id: str) -> List[Dict]:
 
 
 # ── Game Context Management ───────────────────────────────────
-def set_current_game_context(session_id: str, url: str, metrics: dict,
-                              human_verdict: dict, ai_analysis: str):
-    """Store current game context for follow-up questions"""
+def set_current_game_context(
+    session_id: str,
+    url: str,
+    metrics: dict,
+    human_verdict: dict,
+    ai_analysis: str
+):
     game_type = metrics.get("game_type", {})
     page_info = metrics.get("page_info", {})
 
     current_game_context[session_id] = {
-        "url":          url,
-        "title":        page_info.get("title", "Unknown"),
-        "game_type":    game_type.get("primary_type", "Unknown"),
-        "confidence":   game_type.get("confidence", "Low"),
-        "description":  game_type.get("description", ""),
-        "performance":  metrics.get("performance", "Low"),
+        "url":           url,
+        "title":         page_info.get("title", "Unknown"),
+        "game_type":     game_type.get("primary_type", "Unknown"),
+        "confidence":    game_type.get("confidence", "Low"),
+        "description":   game_type.get("description", ""),
+        "performance":   metrics.get("performance", "Low"),
         "time_survived": metrics.get("time_survived", 0),
-        "actions":      metrics.get("actions", 0),
-        "errors":       metrics.get("errors", 0),
+        "actions":       metrics.get("actions", 0),
+        "errors":        metrics.get("errors", 0),
         "human_verdict": human_verdict,
-        "ai_analysis":  ai_analysis,
-        "has_canvas":   page_info.get("has_canvas", False),
-        "tested_at":    metrics.get("tested_at", datetime.now().isoformat()),
-        "ai_tests":     metrics.get("ai_tests_performed", [])
+        "ai_analysis":   ai_analysis,
+        "has_canvas":    page_info.get("has_canvas", False),
+        "tested_at":     metrics.get(
+            "tested_at", datetime.now().isoformat()
+        ),
+        "ai_tests":      metrics.get("ai_tests_performed", [])
     }
 
 
 def get_current_game_context(session_id: str) -> dict:
-    """Get current game context for this session"""
     if session_id not in current_game_context:
         return {"game": None}
     return {"game": current_game_context[session_id]}
 
 
 def build_game_context_prompt(session_id: str) -> str:
-    """Build context string for AI follow-up questions"""
     if session_id not in current_game_context:
         return ""
 
-    ctx = current_game_context[session_id]
+    ctx         = current_game_context[session_id]
     verdict_info = ctx.get("human_verdict", {})
 
     return (
@@ -407,12 +437,11 @@ def build_game_context_prompt(session_id: str) -> str:
 
 
 # ── AI Tests Tracker ──────────────────────────────────────────
-def get_ai_tests_performed(metrics: dict) -> list:
+def get_ai_tests_performed(metrics: dict, groq_available: bool = False) -> list:
     """
-    Based on metrics, list which AI tests were actually performed
-    during the Selenium test session
+    ✅ FIXED — Only add tests that actually ran
     """
-    tests = []
+    tests     = []
     page_info = metrics.get("page_info", {})
 
     tests.append("Page Load Verification")
@@ -424,22 +453,25 @@ def get_ai_tests_performed(metrics: dict) -> list:
     if page_info.get("has_game_elements"):
         tests.append("Game DOM Element Scanning")
 
-    tests.append("Anti-Bot Detection Bypass")
-    tests.append("Keyboard Interaction Simulation")
-    tests.append("Score Extraction Attempt")
+    if metrics.get("actions", 0) > 0:
+        tests.append("Keyboard Interaction Simulation")
+        tests.append("Action Rate Analysis")
+        tests.append("Human Behavior Pattern Check")
+
+    if metrics.get("scores"):
+        tests.append("Score Extraction Attempt")
+
     tests.append("Error Page Detection")
     tests.append("Performance Scoring")
 
     game_type = metrics.get("game_type", {})
     if game_type.get("primary_type"):
-        tests.append(f"Game Type Classification")
+        tests.append("Game Type Classification")
 
-    if metrics.get("actions", 0) > 0:
-        tests.append("Action Rate Analysis")
-        tests.append("Human Behavior Pattern Check")
-
-    tests.append("Groq AI Analysis")
-    tests.append("Human vs AI Verdict")
+    # ✅ FIXED — Only add Groq tests if Groq actually ran
+    if groq_available:
+        tests.append("Groq AI Analysis")
+        tests.append("Human vs AI Verdict")
 
     return tests
 
@@ -450,48 +482,61 @@ def run_game_test(url: str, session_id: str = "default") -> dict:
 
     is_game, reason = is_likely_game_url(url)
 
+    # ✅ FIXED — Handle None (uncertain) case explicitly
     if is_game is False:
         logger.info(f"Pre-check rejected: {reason}")
 
         not_game_metrics = {
-            "time_survived":     0,
-            "actions":           0,
-            "performance":       "NotGame",
-            "scores":            [0],
-            "errors":            0,
-            "screenshots":       [],
-            "page_info":         {"title": "N/A", "has_canvas": False},
-            "game_type":         {},
-            "url":               url,
-            "load_failed":       True,
-            "not_a_game":        True,
-            "game_check_reason": reason,
-            "ai_tests_performed": ["URL Pattern Analysis", "Domain Blacklist Check"],
-            "tested_at":         datetime.now().isoformat()
+            "time_survived":      0,
+            "actions":            0,
+            "performance":        "NotGame",
+            "scores":             [0],
+            "errors":             0,
+            "screenshots":        [],
+            "page_info":          {
+                "title": "N/A", "has_canvas": False
+            },
+            "game_type":          {},
+            "url":                url,
+            "load_failed":        True,
+            "not_a_game":         True,
+            "game_check_reason":  reason,
+            "ai_tests_performed": [
+                "URL Pattern Analysis",
+                "Domain Check"
+            ],
+            "tested_at":          datetime.now().isoformat()
         }
 
         test_history.append({
-            "url":        url,
-            "metrics":    not_game_metrics,
+            "url":         url,
+            "metrics":     not_game_metrics,
             "ai_analysis": "Not a game link.",
-            "success":    False,
-            "not_a_game": True,
-            "reason":     reason,
-            "timestamp":  datetime.now().isoformat()
+            "success":     False,
+            "not_a_game":  True,
+            "reason":      reason,
+            "timestamp":   datetime.now().isoformat()
         })
 
         add_to_conversation(session_id, "user", url)
-        add_to_conversation(session_id, "assistant", f"Wrong link: {reason}")
+        add_to_conversation(
+            session_id, "assistant", f"Wrong link: {reason}"
+        )
 
         return {
-            "type":        "test_result",
-            "reply":       build_reply(url, not_game_metrics, "This URL does not appear to be a game."),
-            "metrics":     not_game_metrics,
-            "ai_analysis": "Not a game link.",
+            "type":          "test_result",
+            "reply":         build_reply(
+                url,
+                not_game_metrics,
+                "This URL does not appear to be a game."
+            ),
+            "metrics":       not_game_metrics,
+            "ai_analysis":   "Not a game link.",
             "human_verdict": None,
             "game_context":  None
         }
 
+    # ✅ is_game is True or None — proceed with Selenium test
     try:
         logger.info("Running Selenium test...")
         metrics = run_test(url)
@@ -500,8 +545,11 @@ def run_game_test(url: str, session_id: str = "default") -> dict:
         if not is_valid:
             raise ValueError(f"Invalid metrics: {val_reason}")
 
+        # ✅ FIXED — Check Groq availability
+        groq_available = get_groq_client() is not None
+
         # Track AI tests performed
-        ai_tests = get_ai_tests_performed(metrics)
+        ai_tests = get_ai_tests_performed(metrics, groq_available)
         metrics["ai_tests_performed"] = ai_tests
 
         # Get AI analysis
@@ -509,12 +557,17 @@ def run_game_test(url: str, session_id: str = "default") -> dict:
         human_verdict = None
 
         if metrics.get("performance") != "NotGame":
-            logger.info("Getting AI analysis from Groq...")
-            ai_analysis = get_ai_test_analysis(url, metrics)
+            if groq_available:
+                logger.info("Getting AI analysis from Groq...")
+                ai_analysis = get_ai_test_analysis(url, metrics)
 
-            logger.info("Getting Human vs AI verdict...")
-            human_verdict = get_human_ai_verdict(url, metrics)
-
+                logger.info("Getting Human vs AI verdict...")
+                human_verdict = get_human_ai_verdict(url, metrics)
+            else:
+                ai_analysis = (
+                    "AI analysis unavailable. "
+                    "Add GROQ_API_KEY to environment variables."
+                )
         else:
             ai_analysis   = "This URL does not point to a valid game."
             human_verdict = {
@@ -523,24 +576,22 @@ def run_game_test(url: str, session_id: str = "default") -> dict:
                 "reason":     "Not a valid game page"
             }
 
-        # Add verdict to metrics for frontend
-        metrics["human_verdict"]    = human_verdict
+        metrics["human_verdict"]      = human_verdict
         metrics["ai_tests_performed"] = ai_tests
 
-        # Build reply
         reply = build_reply(url, metrics, ai_analysis, human_verdict)
 
-        # Store game context for follow-up questions
-        set_current_game_context(session_id, url, metrics, human_verdict, ai_analysis)
+        set_current_game_context(
+            session_id, url, metrics, human_verdict, ai_analysis
+        )
 
-        # Save to history
         test_history.append({
-            "url":          url,
-            "metrics":      metrics,
-            "ai_analysis":  ai_analysis,
+            "url":           url,
+            "metrics":       metrics,
+            "ai_analysis":   ai_analysis,
             "human_verdict": human_verdict,
-            "success":      metrics.get("performance") != "NotGame",
-            "timestamp":    datetime.now().isoformat()
+            "success":       metrics.get("performance") != "NotGame",
+            "timestamp":     datetime.now().isoformat()
         })
 
         add_to_conversation(session_id, "user", url)
@@ -588,7 +639,7 @@ def run_game_test(url: str, session_id: str = "default") -> dict:
         raise
 
 
-# ── Main Entry Point (FIXED WITH DEBUG) ──────────────────────────
+# ── Main Entry Point ──────────────────────────────────────────
 def process_message(message: str, session_id: str = None) -> dict:
     if not message or not isinstance(message, str):
         return {
@@ -599,46 +650,28 @@ def process_message(message: str, session_id: str = None) -> dict:
     if session_id is None:
         session_id = "default_session"
 
-    logger.info(f"Processing: {message[:100]} | Session: {session_id}")
-    
-    # DEBUG: Log what we're checking
-    logger.info(f"Checking if message contains URL...")
-    logger.info(f"Message: '{message}'")
-    
-    # Check for common URL patterns manually for debugging
-    has_http = 'http' in message.lower()
-    has_dot_com = '.com' in message.lower()
-    has_dot_io = '.io' in message.lower()
-    has_dot_org = '.org' in message.lower()
-    
-    logger.info(f"Debug - Has http: {has_http}, Has .com: {has_dot_com}, Has .io: {has_dot_io}")
-    
+    # ✅ FIXED — Removed debug logs that exposed user data
+    logger.info(f"Processing message | Session: {session_id}")
+
     # Extract URL
     url = extract_url(message)
-    
+
     if url:
-        logger.info(f"✅ SUCCESS - URL extracted: {url}")
+        logger.info(f"URL extracted: {url}")
         return run_game_test(url, session_id)
-    
-    # Try manual extraction as fallback
+
+    # ✅ FIXED — Only try manual extract for known game domains
     manual_url = manual_url_extract(message)
     if manual_url:
-        logger.info(f"✅ Manual extraction succeeded: {manual_url}")
+        logger.info(f"Manual extraction: {manual_url}")
         return run_game_test(manual_url, session_id)
-    
-    logger.warning(f"❌ No URL extracted from: '{message[:50]}'")
-    
-    # It's a chat message - check if game context exists
+
     logger.info("No URL found - handling as chat question")
 
-    # Build context string if we have a game analyzed
     game_context_prompt = build_game_context_prompt(session_id)
     has_game_context    = session_id in current_game_context
-
-    # Get conversation history
     conversation_context = get_conversation_context(session_id)
 
-    # Get AI reply with game context
     ai_reply = get_ai_game_conversation(
         message,
         conversation_context,
