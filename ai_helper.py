@@ -9,18 +9,25 @@ from groq import Groq
 logger = logging.getLogger(__name__)
 
 # ── Initialize Groq Client ────────────────────────────────────
-api_key = os.getenv("GROQ_API_KEY")
-model   = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
-client  = None
+model = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
 
-if api_key:
+
+def get_groq_client():
+    """
+    ✅ FIXED — Lazy initialization
+    Always tries to get fresh API key
+    No more stuck None client
+    """
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        logger.warning("GROQ_API_KEY not found in environment")
+        return None
     try:
         client = Groq(api_key=api_key)
-        logger.info("Groq client initialized successfully")
+        return client
     except Exception as e:
         logger.error(f"Groq init failed: {e}")
-else:
-    logger.warning("GROQ_API_KEY not found in environment")
+        return None
 
 
 # ── AI Test Analysis ──────────────────────────────────────────
@@ -28,24 +35,27 @@ def get_ai_test_analysis(url: str, metrics: dict) -> str:
     """
     Generate AI analysis of Selenium test results using Groq
     """
+    # ✅ FIXED — Fresh client every time
+    client = get_groq_client()
+
     if client is None:
         return (
             "AI analysis unavailable. "
             "Add GROQ_API_KEY to your environment variables."
         )
 
-    page_info    = metrics.get("page_info", {})
-    time_s       = metrics.get("time_survived", 0)
-    actions      = metrics.get("actions", 0)
-    errors       = metrics.get("errors", 0)
-    performance  = metrics.get("performance", "Low")
-    has_canvas   = page_info.get("has_canvas", False)
-    has_game     = page_info.get("has_game_elements", False)
-    page_title   = page_info.get("title", "Unknown")
-    load_failed  = metrics.get("load_failed", False)
-    game_type    = metrics.get("game_type", {})
+    page_info      = metrics.get("page_info", {})
+    time_s         = metrics.get("time_survived", 0)
+    actions        = metrics.get("actions", 0)
+    errors         = metrics.get("errors", 0)
+    performance    = metrics.get("performance", "Low")
+    has_canvas     = page_info.get("has_canvas", False)
+    has_game       = page_info.get("has_game_elements", False)
+    page_title     = page_info.get("title", "Unknown")
+    load_failed    = metrics.get("load_failed", False)
+    game_type      = metrics.get("game_type", {})
     game_type_name = game_type.get("primary_type", "Unknown")
-    ai_tests     = metrics.get("ai_tests_performed", [])
+    ai_tests       = metrics.get("ai_tests_performed", [])
 
     if load_failed:
         return (
@@ -124,14 +134,6 @@ Do not use markdown or special formatting.
 def get_human_ai_verdict(url: str, metrics: dict) -> dict:
     """
     Determine if the game session shows human-like or AI/bot behavior.
-
-    Returns:
-        {
-            "verdict":    "Human" | "AI/Bot" | "Uncertain",
-            "confidence": "High" | "Medium" | "Low",
-            "reason":     "explanation string",
-            "signals":    [...list of detected signals...]
-        }
     """
     time_s      = metrics.get("time_survived", 0)
     actions     = metrics.get("actions", 0)
@@ -139,15 +141,16 @@ def get_human_ai_verdict(url: str, metrics: dict) -> dict:
     performance = metrics.get("performance", "Low")
     scores      = metrics.get("scores", [0])
     game_type   = metrics.get("game_type", {})
-    aps         = actions / max(time_s, 1)
 
-    signals      = []
-    human_score  = 0
-    bot_score    = 0
+    # ✅ FIXED — Safe division, handle float time_s
+    safe_time   = max(float(time_s), 1.0)
+    aps         = actions / safe_time
+
+    signals     = []
+    human_score = 0
+    bot_score   = 0
 
     # ── Signal 1: Action Rate ──────────────────────────────────
-    # Humans: 0.3 - 2.0 APS (variable)
-    # Bots:   Very consistent, often >3 APS or exactly 0
     if 0.3 <= aps <= 2.0:
         human_score += 2
         signals.append(f"Natural action rate ({aps:.2f} APS)")
@@ -159,8 +162,6 @@ def get_human_ai_verdict(url: str, metrics: dict) -> dict:
         signals.append("Zero actions - possible bot that failed to interact")
 
     # ── Signal 2: Error Pattern ────────────────────────────────
-    # Humans make some errors (1-3)
-    # Bots: Either 0 errors (perfect) or many errors (random)
     if 1 <= errors <= 3:
         human_score += 2
         signals.append(f"Natural error count ({errors}) - human-like mistakes")
@@ -172,24 +173,32 @@ def get_human_ai_verdict(url: str, metrics: dict) -> dict:
         signals.append(f"High error count ({errors}) - random/bot behavior")
 
     # ── Signal 3: Score Progression ───────────────────────────
-    # Humans: gradual increase with variation
-    # Bots: linear increase or flat line
     if len(scores) > 3:
-        # Check variance
-        diffs = [abs(scores[i] - scores[i-1]) for i in range(1, len(scores))]
+        diffs = [
+            abs(scores[i] - scores[i - 1])
+            for i in range(1, len(scores))
+        ]
         avg_diff = sum(diffs) / len(diffs)
-        variance = sum((d - avg_diff) ** 2 for d in diffs) / len(diffs)
 
-        if variance > 5:
+        # ✅ FIXED — Proper variance check
+        variance = (
+            sum((d - avg_diff) ** 2 for d in diffs) / len(diffs)
+            if len(diffs) > 0 else 0
+        )
+
+        # ✅ FIXED — Use relative threshold, not magic number
+        threshold = avg_diff * 0.5 if avg_diff > 0 else 1
+
+        if variance > threshold:
             human_score += 2
             signals.append("Variable score progression - human-like pattern")
         else:
             bot_score += 2
-            signals.append("Too-consistent score progression - bot-like pattern")
+            signals.append(
+                "Too-consistent score progression - bot-like pattern"
+            )
 
     # ── Signal 4: Timing Pattern ───────────────────────────────
-    # Our bot uses random delays (ACTION_DELAY_MIN to MAX)
-    # Real humans show more natural variation
     if 15 <= time_s <= 60:
         human_score += 1
         signals.append(f"Natural session duration ({time_s:.1f}s)")
@@ -211,12 +220,14 @@ def get_human_ai_verdict(url: str, metrics: dict) -> dict:
         human_score += 1
         signals.append("Medium performance - typical human range")
 
-    # ── Signal 6: Game type behavior ──────────────────────────
+    # ── Signal 6: Game Type Behavior ──────────────────────────
     game_type_name = game_type.get("primary_type", "Unknown")
     if game_type_name in ["Card/Board", "Puzzle", "Strategy"]:
         if aps < 1.0:
             human_score += 1
-            signals.append(f"Thoughtful pace for {game_type_name} - human-like")
+            signals.append(
+                f"Thoughtful pace for {game_type_name} - human-like"
+            )
     elif game_type_name in ["Endless Runner", "Action/Shooter"]:
         if aps > 1.0:
             human_score += 1
@@ -257,10 +268,13 @@ def get_human_ai_verdict(url: str, metrics: dict) -> dict:
             f"(Human: {human_score}, Bot: {bot_score})"
         )
 
-    # ── If we have Groq, enhance the verdict with AI ──────────
+    # ── Enhance with Groq if available ────────────────────────
+    client = get_groq_client()
     if client is not None:
         try:
-            enhanced = _get_groq_human_verdict(url, metrics, signals, verdict)
+            enhanced = _get_groq_human_verdict(
+                url, metrics, signals, verdict, client
+            )
             if enhanced:
                 return enhanced
         except Exception as e:
@@ -278,17 +292,21 @@ def _get_groq_human_verdict(
     url: str,
     metrics: dict,
     signals: list,
-    initial_verdict: str
+    initial_verdict: str,
+    client: Groq  # ✅ FIXED — Pass client, don't rely on global
 ) -> dict:
     """
     Use Groq AI to enhance the Human vs AI verdict determination
     """
-    time_s     = metrics.get("time_survived", 0)
-    actions    = metrics.get("actions", 0)
-    errors     = metrics.get("errors", 0)
+    time_s      = metrics.get("time_survived", 0)
+    actions     = metrics.get("actions", 0)
+    errors      = metrics.get("errors", 0)
     performance = metrics.get("performance", "Low")
-    scores     = metrics.get("scores", [0])
-    aps        = actions / max(time_s, 1)
+    scores      = metrics.get("scores", [0])
+
+    # ✅ FIXED — Safe division
+    safe_time = max(float(time_s), 1.0)
+    aps       = actions / safe_time
 
     score_progression = "flat"
     if len(scores) > 1:
@@ -315,12 +333,6 @@ GAME SESSION DATA:
 
 TASK:
 Determine if this game session was played by a HUMAN or an AI/BOT.
-
-Consider:
-- Human players have variable timing, make natural mistakes, show learning
-- AI/Bots have consistent timing, either perfect or random actions
-- Our test bot uses random keys at 0.3-0.6 second intervals
-- Real humans react to game events, bots don't
 
 Respond in EXACTLY this format (no extra text):
 VERDICT: [Human/AI Bot/Uncertain]
@@ -353,14 +365,19 @@ KEY SIGNAL: [Most important signal you detected]
     response = completion.choices[0].message.content.strip()
     logger.info(f"Groq verdict response: {response}")
 
-    # ── Parse response ─────────────────────────────────────────
-    lines      = response.split('\n')
-    parsed     = {}
+    # ✅ FIXED — Safe parsing with validation
+    lines  = response.split('\n')
+    parsed = {}
 
     for line in lines:
         if ':' in line:
             key, _, value = line.partition(':')
             parsed[key.strip().upper()] = value.strip()
+
+    # ✅ FIXED — Validate we got something useful
+    if not parsed:
+        logger.warning("Groq returned unparseable response")
+        return None
 
     verdict    = parsed.get("VERDICT", initial_verdict)
     confidence = parsed.get("CONFIDENCE", "Medium")
@@ -396,8 +413,10 @@ def get_ai_game_conversation(
 ) -> str:
     """
     Generate AI reply for game-related chat messages.
-    Now accepts game_context for follow-up questions about tested game.
     """
+    # ✅ FIXED — Fresh client
+    client = get_groq_client()
+
     if client is None:
         return (
             "I'm TestProbe AI, your game testing assistant!\n\n"
@@ -410,7 +429,6 @@ def get_ai_game_conversation(
             "or ask me anything about games!"
         )
 
-    # ── Build system prompt ────────────────────────────────────
     system_content = (
         "You are TestProbe AI, a friendly and knowledgeable game testing assistant. "
         "You help users test web-based games using Selenium automation. "
@@ -428,7 +446,6 @@ def get_ai_game_conversation(
         "Use plain text with emojis for friendliness."
     )
 
-    # ── Add game context if available ──────────────────────────
     if game_context:
         system_content += (
             f"\n\nIMPORTANT - You have already analyzed a game for this user. "
@@ -442,23 +459,29 @@ def get_ai_game_conversation(
     try:
         messages = [{"role": "system", "content": system_content}]
 
-        # Add conversation history (last 10 messages)
-        if conversation_history and len(conversation_history) > 0:
+        # ✅ FIXED — Validate conversation history
+        if conversation_history and isinstance(conversation_history, list):
             recent = conversation_history[-10:]
             for msg in recent:
+                # ✅ Safe key access
+                if not isinstance(msg, dict):
+                    continue
+                if "role" not in msg or "content" not in msg:
+                    continue
                 role = "user" if msg["role"] == "user" else "assistant"
-                messages.append({
-                    "role":    role,
-                    "content": msg["content"]
-                })
+                content = str(msg.get("content", "")).strip()
+                if content:  # ✅ Skip empty messages
+                    messages.append({
+                        "role":    role,
+                        "content": content
+                    })
 
-        # Add current message
         messages.append({
             "role":    "user",
             "content": user_message
         })
 
-        logger.info("Requesting Groq chat reply with context...")
+        logger.info("Requesting Groq chat reply...")
         completion = client.chat.completions.create(
             model=model,
             temperature=0.7,
