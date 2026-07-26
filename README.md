@@ -92,16 +92,34 @@ Then open `http://localhost:5000`.
 ## Project Structure
 
 ```
-game-tester-ai/
-├── app.py              # Flask application & routes
-├── chatbot.py          # Message processor & session management
-├── tester.py           # Selenium game testing engine
-├── ai_helper.py         # Groq AI integration
-├── requirements.txt    # Python dependencies
-├── Procfile            # Render deployment config
-├── build.sh            # Render build script
-└── templates/
-    └── index.html      # Frontend (HTML + CSS + JS)
+P_AI/
+│
+├── app.py      # Flask application & routes
+├── chatbot.py  # Message processor & session management
+├── tester.py   # Selenium game testing engine
+├── ai_helper.py # Groq AI integration
+│
+├── requirements.txt # Python dependencies
+├── Procfile    # Deployment config
+├── build.sh    # Build script
+├── Dockerfile  # Docker container config
+├── .dockerignore # Docker ignore rules
+├── render.yml  # Render deployment config
+├── .gitignore  # Git ignore rules
+├── .env        # Environment variables (not in git)
+│
+├── templates/
+│ └── index.html # Frontend UI
+│
+├── static/
+│ ├── css/
+│ │ └── style.css # Stylesheet
+│ └── js/
+│ └── script.js  # Frontend logic
+│
+├── logs/        # Auto-created log files
+├── pycache/     # Python cache (auto-generated)
+└── venv/        # Virtual environment (not in git)
 ```
 
 ---
